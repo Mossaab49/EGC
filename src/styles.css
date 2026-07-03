@@ -3,3 +3,46 @@
 @media(max-width:1000px){.site-nav{padding:0 4vw}.site-links{display:none}.brand{margin-right:auto}.hero-grid,.wordle-layout,.tournament-layout,.minecraft-layout,.ranking-layout,.dash-grid,.wordle-admin-grid,.tournament-admin{grid-template-columns:1fr}.hero-art{display:none}.card-grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.admin-shell,.admin-shell.is-collapsed{grid-template-columns:1fr}.admin-sidebar{min-height:auto;flex-direction:row;align-items:center;overflow:auto;padding:12px}.admin-sidebar> .pill,.admin-sidebar .sidebar-footer,.admin-sidebar nav span{display:none}.admin-sidebar nav{display:flex}.admin-sidebar nav button{padding:10px}.admin-brand button{display:none}.admin-content{padding:22px}.event-admin-row{grid-template-columns:64px 1fr}.event-admin-row>.pill,.event-actions{grid-column:2}.minecraft-table{overflow:auto}.minecraft-table .data-head,.minecraft-table .data-row{min-width:720px}.data-table{overflow:auto}.data-head,.data-row{min-width:720px}.toolbar{align-items:start;flex-direction:column}.toolbar input{width:100%}.admin-top{flex-direction:column}.admin-actions{justify-content:start}.game-stamp{display:none}}
 @media(max-width:560px){.container{width:min(92vw,1280px)}.site-nav{gap:8px}.profile-btn{font-size:0}.profile-btn i{font-size:16px}.hero{min-height:465px}.hero-grid{padding:56px 0}.hero-copy h1{font-size:46px;letter-spacing:-2.7px}.section{padding:55px 0}.section-head{align-items:start;flex-direction:column}.section-title{font-size:34px}.panel-header{display:block}.timer{display:block;margin-top:13px}.tile{width:43px;height:43px}.wordle-row{gap:7px}.wordle-board{gap:7px}.metrics{grid-template-columns:1fr}.request-row{grid-template-columns:1fr auto}.request-row span{display:none}.request-row .pill{grid-column:2}.table-head,.player{grid-template-columns:48px 1fr 60px}.ranking-table{padding:17px}.event-actions{flex-wrap:wrap}.inline-create{width:100%;flex-direction:column;align-items:stretch}.modal-card{padding:31px 25px}.toast{right:16px;bottom:16px;width:calc(100vw - 32px)}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
+
+/* Modern polish overrides */
+html{scroll-behavior:smooth}
+body{min-width:320px}
+h1,h2,h3,p,button,input,small,strong,span,.brand,.hero-copy h1,.section-title,.event-content h3,.admin-top h2,.metric strong,.console-card strong,.tournament-banner h2,.minecraft-banner h2,.streak-card b,.capacity strong,.eyebrow,.pill{letter-spacing:0!important}
+.page-swap{animation:pageIn .42s cubic-bezier(.16,.84,.24,1) both}
+.site-nav{box-shadow:0 12px 32px rgba(13,13,26,.06)}
+.site-links button{position:relative;overflow:hidden}
+.site-links button:after{content:"";position:absolute;left:12px;right:12px;bottom:7px;height:2px;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--gold));transform:scaleX(0);transform-origin:left;transition:transform .24s ease}
+.site-links button:hover:after,.site-links button.active:after{transform:scaleX(1)}
+.site-links span,.admin-sidebar nav b{display:grid;place-items:center;width:25px;height:25px;border-radius:8px;background:rgba(30,80,180,.09);color:var(--blue);font-size:11px;font-weight:900}
+.site-links button.active span,.site-links button:hover span{background:var(--blue);color:#fff}
+.admin-sidebar nav b{width:30px;background:rgba(255,255,255,.08);color:inherit}
+.btn,.tab,.row-action,.motion-control,.modal-close,.site-links button,.profile-btn,.brand{outline:none}
+.btn:focus-visible,.tab:focus-visible,.row-action:focus-visible,.motion-control:focus-visible,.modal-close:focus-visible,.site-links button:focus-visible,.profile-btn:focus-visible,.brand:focus-visible,input:focus-visible{box-shadow:0 0 0 4px rgba(245,158,11,.22),0 0 0 1px var(--gold)}
+.btn:active,.tab:active,.row-action:active,.motion-control:active,.profile-btn:active{transform:translateY(0) scale(.98)}
+.reveal-card,.admin-card,.panel,.score-panel,.tournament-banner,.minecraft-banner{backface-visibility:hidden}
+.reveal-card{position:relative}
+.reveal-card:after{content:"";position:absolute;inset:-1px;background:linear-gradient(120deg,transparent 0%,rgba(255,255,255,.42) 42%,transparent 68%);opacity:0;transform:translateX(-85%);transition:transform .72s ease,opacity .24s ease;pointer-events:none}
+.reveal-card:hover:after{opacity:.65;transform:translateX(85%)}
+.event-card,.metric,.admin-card,.panel{transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+.admin-card:hover,.panel:hover{border-color:#cdd8f5;box-shadow:0 18px 44px rgba(13,13,26,.08)}
+.metric:hover{transform:translateY(-5px)}
+.field input:invalid:not(:placeholder-shown){border-color:var(--danger);box-shadow:0 0 0 4px rgba(239,68,68,.09)}
+.progress{position:relative}
+.progress:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:progressShine 1.8s ease-in-out infinite}
+.wordle-row{perspective:600px}
+.tile:not(:empty){animation:tilePop .32s cubic-bezier(.14,.9,.2,1)}
+.success-symbol{font-size:28px}
+.modal-symbol{font-size:22px;font-weight:900}
+.toast{transform-origin:right bottom}
+@keyframes pageIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes tilePop{0%{transform:scale(.86)}70%{transform:scale(1.06)}100%{transform:scale(1)}}
+@keyframes progressShine{0%,35%{transform:translateX(-100%)}70%,100%{transform:translateX(100%)}}
+
+@media(max-width:560px){
+  .hero-copy h1{font-size:42px}
+  .btn{width:100%}
+  .hero-actions .btn,.modal-actions .btn{width:auto}
+  .wordle-board{width:100%;justify-items:center}
+  .tabs .tab{flex:1 1 100%;min-height:44px}
+  .pill{white-space:normal;text-align:center}
+}
