@@ -37,6 +37,9 @@ h1,h2,h3,p,button,input,small,strong,span,.brand,.hero-copy h1,.section-title,.e
 @keyframes pageIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes tilePop{0%{transform:scale(.86)}70%{transform:scale(1.06)}100%{transform:scale(1)}}
 @keyframes progressShine{0%,35%{transform:translateX(-100%)}70%,100%{transform:translateX(100%)}}
+@keyframes loginLogoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes loginLogoTilt{0%,100%{transform:rotateX(0) rotateY(-7deg) translateZ(24px);filter:drop-shadow(0 18px 30px rgba(0,0,0,.28))}50%{transform:rotateX(7deg) rotateY(8deg) translateZ(38px);filter:drop-shadow(0 28px 38px rgba(0,0,0,.4))}}
+@keyframes loginLogoShadow{0%,100%{opacity:.82;transform:scaleX(.9)}50%{opacity:.52;transform:scaleX(.72)}}
 
 @media(max-width:560px){
   .hero-copy h1{font-size:42px}
@@ -84,9 +87,9 @@ h1,h2,h3,p,button,input,small,strong,span,.brand,.hero-copy h1,.section-title,.e
 .login-showcase{position:relative;overflow:hidden;display:grid;align-content:center;gap:28px;padding:8vw;background:linear-gradient(135deg,#080815,#11122c 58%,#1E50B4)}
 .login-showcase:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(0deg,rgba(255,255,255,.08) 1px,transparent 1px);background-size:42px 42px;opacity:.35}
 .login-showcase>*{position:relative;z-index:1}
-.login-logo-stage{position:relative;width:min(430px,82%);display:grid;place-items:center;margin-bottom:34px}
-.login-logo-stage:after{content:"";position:absolute;left:10%;right:10%;bottom:-26px;height:54px;border-radius:50%;background:rgba(0,0,0,.68);filter:blur(20px);transform:scaleX(.94);z-index:-1}
-.login-logo-stage img{display:block;width:100%;height:auto;filter:drop-shadow(0 18px 30px rgba(0,0,0,.28))}
+.login-logo-stage{position:relative;width:min(430px,82%);display:grid;place-items:center;margin-bottom:34px;perspective:900px;transform-style:preserve-3d;animation:loginLogoFloat 4.8s ease-in-out infinite}
+.login-logo-stage:after{content:"";position:absolute;left:10%;right:10%;bottom:-26px;height:54px;border-radius:50%;background:rgba(0,0,0,.7);filter:blur(20px);transform:scaleX(.94);z-index:-1;animation:loginLogoShadow 4.8s ease-in-out infinite}
+.login-logo-stage img{display:block;width:100%;height:auto;filter:drop-shadow(0 18px 30px rgba(0,0,0,.28));transform:rotateX(0) rotateY(0) translateZ(24px);animation:loginLogoTilt 4.8s ease-in-out infinite;will-change:transform,filter}
 .login-showcase h1{max-width:620px;margin:0;font-size:clamp(42px,5vw,72px);line-height:.95;color:#fff}
 .login-showcase p{max-width:540px;color:#D7DBE9;line-height:1.65;font-size:17px}
 .login-panel{align-self:center;justify-self:center;width:min(440px,88%);display:grid;gap:16px;padding:34px;border:1px solid var(--line);border-radius:24px;background:#fff;color:var(--navy);box-shadow:0 30px 80px rgba(0,0,0,.28)}
