@@ -4,6 +4,7 @@ const navItems = [
   { id: 'home', label: 'Accueil', icon: 'H' },
   { id: 'events', label: 'Evenements', icon: 'E' },
   { id: 'activities', label: 'Activites', icon: 'A' },
+  { id: 'account', label: 'Compte', icon: 'U' },
   { id: 'ranking', label: 'Classement', icon: '#' },
   { id: 'admin', label: 'Admin', icon: '*' },
 ]
@@ -534,14 +535,19 @@ function Field({ label, placeholder, required = false, value, onChange, type: fi
   return <label className="field"><span>{label}</span><input name={name} type={type} placeholder={placeholder} required={required} value={value} onChange={onChange} /></label>
 }
 
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin, members }) {
   const [form, setForm] = useState({ name: '', email: '', password: '' })
+  const [loginError, setLoginError] = useState('')
 
-  const updateForm = (key, value) => setForm((current) => ({ ...current, [key]: value }))
+  const updateForm = (key, value) => { setLoginError(''); setForm((current) => ({ ...current, [key]: value })) }
   const submitLogin = (event) => {
     event.preventDefault()
     const email = form.email.trim().toLowerCase()
-    const knownMember = initialMembers.find((member) => member.email.toLowerCase() === email)
+    const knownMember = members.find((member) => member.email.toLowerCase() === email)
+    if (knownMember?.password && knownMember.password !== form.password) {
+      setLoginError('Mot de passe incorrect. Contacte un admin pour le reinitialiser.')
+      return
+    }
     const cleanName = form.name.trim() || knownMember?.name || email.split('@')[0] || 'Membre EGC'
     onLogin({ name: cleanName, email, role: knownMember?.role || 'Membre' })
   }
@@ -563,9 +569,57 @@ function LoginPage({ onLogin }) {
         <Field required label="Nom complet" value={form.name} onChange={(event) => updateForm('name', event.target.value)} placeholder="Mohamed Boustani" />
         <Field required label="Adresse e-mail" value={form.email} onChange={(event) => updateForm('email', event.target.value)} placeholder="membre@egc.ma" />
         <Field required label="Mot de passe" type="password" value={form.password} onChange={(event) => updateForm('password', event.target.value)} placeholder="********" />
+        {loginError && <p className="login-error">{loginError}</p>}
         <Button type="submit">Se connecter</Button>
       </form>
     </main>
+  )
+}
+
+function Account({ user, members, setMembers, toast }) {
+  const member = members.find((item) => item.email.toLowerCase() === user.email.toLowerCase())
+  const [form, setForm] = useState({ current: '', next: '', confirm: '' })
+  const [error, setError] = useState('')
+  const hasPassword = Boolean(member?.password)
+  const updateForm = (key, value) => { setError(''); setForm((current) => ({ ...current, [key]: value })) }
+
+  const submitPassword = (event) => {
+    event.preventDefault()
+    const nextPassword = form.next.trim()
+    if (hasPassword && form.current !== member.password) {
+      setError('Le mot de passe actuel est incorrect.')
+      return
+    }
+    if (nextPassword.length < 4) {
+      setError('Le nouveau mot de passe doit contenir au moins 4 caracteres.')
+      return
+    }
+    if (nextPassword !== form.confirm.trim()) {
+      setError('La confirmation ne correspond pas au nouveau mot de passe.')
+      return
+    }
+
+    const updatedMember = {
+      name: member?.name || user.name,
+      email: user.email.toLowerCase(),
+      role: member?.role || user.role || 'Membre',
+      points: member?.points || 0,
+      status: member?.status || 'Actif',
+      password: nextPassword,
+      passwordUpdatedAt: new Date().toLocaleDateString('fr-FR'),
+    }
+    setMembers((rows) => rows.some((item) => item.email.toLowerCase() === user.email.toLowerCase())
+      ? rows.map((item) => item.email.toLowerCase() === user.email.toLowerCase() ? { ...item, ...updatedMember } : item)
+      : [...rows, updatedMember])
+    setForm({ current: '', next: '', confirm: '' })
+    toast({ title: 'Mot de passe modifie', copy: 'Ton nouveau mot de passe est actif pour cette session locale.' })
+  }
+
+  return (
+    <>
+      <PageHeader eyebrow="Compte membre" title="Gerer mon compte" lead="Modifie ton mot de passe et garde ton acces EGC a jour." />
+      <section className="section compact"><div className="container account-layout"><article className="panel account-card"><div className="account-avatar">{user.name[0]}</div><h3>{user.name}</h3><p>{user.email}</p><Pill tone={user.role === 'Admin' ? 'purple' : 'muted'}>{user.role}</Pill><div className="account-status"><span>Mot de passe</span><strong>{hasPassword ? `Modifie le ${member.passwordUpdatedAt || 'recemment'}` : 'Non defini localement'}</strong></div></article><form className="panel account-password-card" onSubmit={submitPassword}><p className="eyebrow">Securite</p><h3>Modifier mon mot de passe</h3><p>{hasPassword ? 'Entre ton mot de passe actuel puis choisis le nouveau.' : 'Choisis ton premier mot de passe pour ce prototype local.'}</p>{hasPassword && <Field required label="Mot de passe actuel" type="password" value={form.current} onChange={(event) => updateForm('current', event.target.value)} placeholder="Mot de passe actuel" />}<Field required label="Nouveau mot de passe" type="password" value={form.next} onChange={(event) => updateForm('next', event.target.value)} placeholder="Nouveau mot de passe" /><Field required label="Confirmer le mot de passe" type="password" value={form.confirm} onChange={(event) => updateForm('confirm', event.target.value)} placeholder="Confirmer le mot de passe" />{error && <p className="login-error">{error}</p>}<Button type="submit">Enregistrer le mot de passe</Button></form></div></section>
+    </>
   )
 }
 
@@ -584,11 +638,10 @@ function Ranking({ go }) {
   )
 }
 
-function Admin({ toast, events, setEvents, tournaments, setTournaments, wordBank, setWordBank }) {
+function Admin({ toast, events, setEvents, tournaments, setTournaments, wordBank, setWordBank, members, setMembers }) {
   const [active, setActive] = useState('overview')
   const [collapsed, setCollapsed] = useState(false)
   const [motion, setMotion] = useState('boost')
-  const [members, setMembers] = useState(initialMembers)
   const [query, setQuery] = useState('')
   const [newMemberOpen, setNewMemberOpen] = useState(false)
   const [requestRows, setRequestRows] = useState([
@@ -601,13 +654,23 @@ function Admin({ toast, events, setEvents, tournaments, setTournaments, wordBank
   const filteredMembers = useMemo(() => members.filter((member) => `${member.name} ${member.email}`.toLowerCase().includes(query.toLowerCase())), [members, query])
   const changeRequest = (name, status) => setRequestRows((rows) => rows.map((row) => row.name === name ? { ...row, status } : row))
   const removeMember = (name) => { setMembers((rows) => rows.filter((member) => member.name !== name)); toast({ title: 'Membre supprime', copy: `${name} a ete retire de la liste.` }) }
+  const resetMemberPassword = (email, password) => {
+    const cleanPassword = password.trim()
+    if (cleanPassword.length < 4) {
+      toast({ title: 'Mot de passe trop court', copy: 'Choisis au moins 4 caracteres pour le mot de passe temporaire.' })
+      return false
+    }
+    setMembers((rows) => rows.map((member) => member.email === email ? { ...member, password: cleanPassword, passwordUpdatedAt: new Date().toLocaleDateString('fr-FR') } : member))
+    toast({ title: 'Mot de passe reinitialise', copy: `Le mot de passe temporaire est pret pour ${email}.` })
+    return true
+  }
   const createMember = (event) => {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
     const name = String(data.get('name') || '').trim()
     const email = String(data.get('email') || '').trim()
     if (!name || !email) return
-    setMembers((rows) => [...rows, { name, email, role: 'Membre', points: 0, status: 'Invite' }])
+    setMembers((rows) => [...rows, { name, email: email.toLowerCase(), role: 'Membre', points: 0, status: 'Invite' }])
     event.currentTarget.reset()
     setNewMemberOpen(false)
     toast({ title: 'Membre cree', copy: `Les identifiants temporaires de ${name} sont prets a etre transmis.` })
@@ -627,7 +690,7 @@ function Admin({ toast, events, setEvents, tournaments, setTournaments, wordBank
         <aside className="admin-sidebar"><div className="admin-brand"><span>EGC</span><i>G</i><button onClick={() => setCollapsed((value) => !value)} title={collapsed ? 'Afficher le menu' : 'Reduire le menu'}>{collapsed ? '>' : '<'}</button></div><Pill tone="gold">ADMIN</Pill><nav>{adminTabs.map((item) => <button key={item.id} onClick={() => setActive(item.id)} className={active === item.id ? 'active' : ''}><b>{item.icon}</b><span>{item.label}</span></button>)}</nav><div className="sidebar-footer"><span className="pulse-dot" /> Systeme operationnel</div></aside>
         <div className="admin-content"><div className="admin-top"><div><p className="eyebrow">{adminTabs.find((item) => item.id === active)?.label}</p><h2>{active === 'overview' ? 'Tableau de bord' : adminTabs.find((item) => item.id === active)?.label}</h2><p>Juillet 2026 - Donnees de demonstration interactives</p></div><div className="admin-actions"><button className={`motion-control ${motion === 'boost' ? 'active' : ''}`} onClick={() => setMotion(motion === 'boost' ? 'soft' : 'boost')}>{motion === 'boost' ? '* Effets boostes' : 'o Effets doux'}</button><Button onClick={() => setNewMemberOpen(true)}>Creer un membre</Button></div></div>
           {active === 'overview' && <Overview setActive={setActive} events={events} tournaments={tournaments} />}
-          {active === 'members' && <Members rows={filteredMembers} query={query} setQuery={setQuery} onRemove={removeMember} />}
+          {active === 'members' && <Members rows={filteredMembers} query={query} setQuery={setQuery} onRemove={removeMember} onPasswordReset={resetMemberPassword} />}
           {active === 'wordle' && <WordleAdmin words={wordBank} wordInput={wordInput} setWordInput={setWordInput} addWord={addWord} setWordBank={setWordBank} />}
           {active === 'events' && <EventsAdmin rows={events} setRows={setEvents} toast={toast} />}
           {active === 'tournaments' && <TournamentsAdmin tournaments={tournaments} setTournaments={setTournaments} toast={toast} />}
@@ -648,8 +711,25 @@ function Overview({ setActive, events, tournaments }) {
   return <div className="admin-view fade-enter"><div className="metrics">{metrics.map(([label, value, caption], index) => <article className="metric reveal-card" key={label} style={{ '--delay': `${index * 70}ms` }}><small>{label}</small><strong>{value}</strong><em>{caption}</em><i className="metric-shine" /></article>)}</div><div className="dash-grid"><article className="admin-card chart-card"><header><h3>Activite des 7 derniers jours</h3><Pill tone="success">+18%</Pill></header><div className="bar-chart">{bars.map((height, index) => <span key={index} style={{ '--height': `${height}px`, '--delay': `${index * 80}ms` }}><i /><b>{['L', 'M', 'M', 'J', 'V', 'S', 'D'][index]}</b></span>)}</div></article><article className="admin-card quick-card"><h3>Actions rapides</h3><Button variant="ghost" onClick={() => setActive('members')}>MB Gerer les membres</Button><Button variant="ghost" onClick={() => setActive('wordle')}>WD Ajouter un mot Wordle</Button><Button variant="ghost" onClick={() => setActive('events')}>EV Creer un evenement</Button><Button onClick={() => setActive('tournaments')}>TR Nouveau tournoi</Button></article></div><article className="admin-card mini-requests"><header><h3>Dernieres demandes Minecraft</h3><Button variant="secondary" onClick={() => setActive('minecraft')}>Voir tout</Button></header>{[['gamer_ensat', 'TLauncher', 'En attente'], ['nour_play', 'Officiel', 'En attente'], ['ayoub10', 'TLauncher', 'Acceptee']].map(([name, launcher, status]) => <div className="request-row" key={name}><b>{name}</b><span>{launcher}</span><Pill tone={status === 'Acceptee' ? 'success' : 'warning'}>{status}</Pill></div>)}</article></div>
 }
 
-function Members({ rows, query, setQuery, onRemove }) {
-  return <div className="admin-view fade-enter"><div className="toolbar"><div><h3>Membres de la communaute</h3><p>Creation, gestion des roles et suivi des points.</p></div><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher un membre..." /></div><div className="admin-card data-table"><div className="data-head"><span>MEMBRE</span><span>ROLE</span><span>POINTS</span><span>STATUT</span><span /></div>{rows.map((member) => <div className="data-row" key={member.email}><span className="member-cell"><i>{member.name[0]}</i><b>{member.name}<small>{member.email}</small></b></span><Pill tone={member.role === 'Admin' ? 'purple' : 'muted'}>{member.role}</Pill><strong>{member.points}</strong><Pill tone={member.status === 'Actif' ? 'success' : 'warning'}>{member.status}</Pill><button className="row-action danger" onClick={() => onRemove(member.name)}>Retirer</button></div>)}</div></div>
+function Members({ rows, query, setQuery, onRemove, onPasswordReset }) {
+  const [passwordTarget, setPasswordTarget] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const selectedMember = rows.find((member) => member.email === passwordTarget)
+
+  const submitPasswordReset = (event) => {
+    event.preventDefault()
+    if (onPasswordReset(passwordTarget, newPassword)) {
+      setPasswordTarget('')
+      setNewPassword('')
+    }
+  }
+
+  const openPasswordReset = (email) => {
+    setPasswordTarget(email)
+    setNewPassword('')
+  }
+
+  return <div className="admin-view fade-enter"><div className="toolbar"><div><h3>Membres de la communaute</h3><p>Creation, gestion des roles et suivi des points.</p></div><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher un membre..." /></div>{selectedMember && <form className="admin-card password-reset-card" onSubmit={submitPasswordReset}><div><p className="eyebrow">Reset acces</p><h3>Changer le mot de passe</h3><p>{selectedMember.name} pourra se connecter avec ce mot de passe temporaire.</p></div><label className="field"><span>Nouveau mot de passe</span><input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="Mot de passe temporaire" autoFocus /></label><div className="form-actions"><Button type="submit">Enregistrer</Button><Button type="button" variant="secondary" onClick={() => { setPasswordTarget(''); setNewPassword('') }}>Annuler</Button></div></form>}<div className="admin-card data-table members-table"><div className="data-head"><span>MEMBRE</span><span>ROLE</span><span>POINTS</span><span>STATUT</span><span>ACTIONS</span></div>{rows.map((member) => <div className="data-row" key={member.email}><span className="member-cell"><i>{member.name[0]}</i><b>{member.name}<small>{member.email}</small></b></span><Pill tone={member.role === 'Admin' ? 'purple' : 'muted'}>{member.role}</Pill><strong>{member.points}</strong><Pill tone={member.status === 'Actif' ? 'success' : 'warning'}>{member.status}</Pill><span className="row-buttons"><button className="row-action" onClick={() => openPasswordReset(member.email)}>Changer MDP</button><button className="row-action danger" onClick={() => onRemove(member.name)}>Retirer</button></span></div>)}</div></div>
 }
 
 function WordleAdmin({ words, wordInput, setWordInput, addWord, setWordBank }) {
@@ -756,6 +836,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [page, setPage] = useState('home')
   const [navOpen, setNavOpen] = useState(false)
+  const [members, setMembers] = useState(initialMembers)
   const [events, setEvents] = useState(initialEvents)
   const [tournaments, setTournaments] = useState(initialTournaments)
   const [wordBank, setWordBank] = useState(initialWords)
@@ -780,7 +861,7 @@ export default function App() {
   const visibleNavItems = user?.role === 'Admin' ? navItems : navItems.filter((item) => item.id !== 'admin')
 
   if (!user) {
-    return <LoginPage onLogin={(profile) => { setUser(profile); setPage(profile.role === 'Admin' ? 'admin' : 'home') }} />
+    return <LoginPage members={members} onLogin={(profile) => { setUser(profile); setPage(profile.role === 'Admin' ? 'admin' : 'home') }} />
   }
 
   return (
@@ -792,14 +873,15 @@ export default function App() {
           {visibleNavItems.map((item) => <button key={item.id} onClick={() => go(item.id)} className={page === item.id ? 'active' : ''} aria-current={page === item.id ? 'page' : undefined}><span>{item.icon}</span>{item.label}</button>)}
           <button className="logout-btn menu-logout" onClick={() => { setUser(null); setPage('home'); setNavOpen(false) }}><span>LO</span>Logout</button>
         </div>
-        <button className="profile-btn" onClick={() => go('activities')}><i>*</i> {user.name}</button>
+        <button className="profile-btn" onClick={() => go('account')}><i>*</i> {user.name}</button>
       </nav>
       <main className="page-swap" key={page}>
         {page === 'home' && <Home go={go} />}
         {page === 'events' && <Events events={events} openSignup={openSignup} />}
         {page === 'activities' && <Activities go={go} showSuccess={setSuccess} toast={toast} wordBank={wordBank} tournaments={tournaments} />}
+        {page === 'account' && <Account user={user} members={members} setMembers={setMembers} toast={toast} />}
         {page === 'ranking' && <Ranking go={go} />}
-        {page === 'admin' && <Admin toast={toast} events={events} setEvents={setEvents} tournaments={tournaments} setTournaments={setTournaments} wordBank={wordBank} setWordBank={setWordBank} />}
+        {page === 'admin' && <Admin toast={toast} events={events} setEvents={setEvents} tournaments={tournaments} setTournaments={setTournaments} wordBank={wordBank} setWordBank={setWordBank} members={members} setMembers={setMembers} />}
       </main>
       <Modal open={Boolean(signupEvent)} onClose={() => setSignupEvent(null)}><button className="modal-close" onClick={() => setSignupEvent(null)}>x</button><div className="modal-symbol">-&gt;</div><h2>{signupEvent ? `Inscription - ${signupEvent.title}` : 'Inscription'}</h2><p>Le formulaire d'inscription s'ouvre dans un nouvel onglet. Aucune donnee ne sera enregistree directement par EGC.</p><div className="modal-actions"><Button onClick={() => { setSignupEvent(null); toast({ title: 'Formulaire externe', copy: "Simulation : redirection vers le formulaire d'inscription." }) }}>Ouvrir le formulaire</Button><Button variant="secondary" onClick={() => setSignupEvent(null)}>Retour aux evenements</Button></div></Modal>
       <SuccessOverlay success={success} close={() => setSuccess(null)} />
