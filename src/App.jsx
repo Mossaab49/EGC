@@ -540,8 +540,10 @@ function LoginPage({ onLogin }) {
   const updateForm = (key, value) => setForm((current) => ({ ...current, [key]: value }))
   const submitLogin = (event) => {
     event.preventDefault()
-    const cleanName = form.name.trim() || form.email.split('@')[0] || 'Membre EGC'
-    onLogin({ name: cleanName, email: form.email.trim(), role: 'Membre' })
+    const email = form.email.trim().toLowerCase()
+    const knownMember = initialMembers.find((member) => member.email.toLowerCase() === email)
+    const cleanName = form.name.trim() || knownMember?.name || email.split('@')[0] || 'Membre EGC'
+    onLogin({ name: cleanName, email, role: knownMember?.role || 'Membre' })
   }
 
   return (
