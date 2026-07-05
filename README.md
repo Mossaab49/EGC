@@ -1,24 +1,72 @@
-# EGC React Prototype
+# ENSAT Gaming Club Platform
 
-Prototype React/Vite pour la plateforme ENSAT Gaming Club.
+Frontend Vite/React pour la plateforme web de l'ENSAT Gaming Club.
 
-## Demarrer
+## Stack actuelle
+
+- React 19
+- Vite 7
+- CSS global dans `src/styles.css`
+- Donnees mockees en memoire, sans backend
+
+Note: le depot actuel n'est pas encore migre vers TypeScript, Tailwind CSS, Framer Motion ou Lucide React. La structure a ete preparee pour rendre cette migration progressive.
+
+## Lancer le projet
 
 ```bash
 npm install
 npm run dev
 ```
 
-Ensuite, ouvrir l'URL affichee par Vite, souvent `http://localhost:5173`.
+Build production:
 
-## Fonctions incluses
+```bash
+npm run build
+```
 
-- Navigation entre Accueil, Evenements, Activites, Classement et Admin.
-- Wordle avec etat de victoire, bonus de points et animation de tuiles.
-- Inscription au tournoi avec confirmation et ticket dynamique.
-- Demande Minecraft avec feedback.
-- Panneau Admin ameliore : sidebar repliable, controle des effets visuels, statistiques animees, gestion interactive des membres, mots Wordle, evenements, tournois et demandes Minecraft.
+## Structure
 
-## Remarque
+```txt
+src/
+  App.jsx                 Orchestration globale, navigation, etat mocke racine
+  components/
+    ui/                   Briques UI generiques: Button, Field, Modal, Toast
+    shared/               Composants transverses: PageHeader, Detail, Tile
+  constants/              Navigation, formulaires vides, valeurs stables
+  features/               Pages et features metier
+    account/
+    activities/
+    admin/
+    auth/
+    events/
+    home/
+    ranking/
+  hooks/                  Hooks reutilisables
+  lib/                    Fonctions pures et donnees mockees
+    mock-data/
+  services/               Abstractions pretes pour futur backend
+  types/                  Types JSDoc partages en attendant TypeScript strict
+```
 
-Les donnees sont des donnees de demonstration gerees dans l'etat React. La prochaine etape cote production serait de relier ces interfaces a une API Node.js/Express et a PostgreSQL ou MongoDB.
+## Conventions
+
+- Les composants React sont en `PascalCase`.
+- Les fonctions et variables sont en `camelCase`.
+- Les fichiers de feature restent proches du domaine metier.
+- Les fonctions pures et testables vont dans `src/lib`.
+- Les donnees mockees ne doivent pas etre declarees dans les composants.
+- Les futurs appels backend doivent passer par `src/services`.
+
+## Etat des donnees
+
+Les membres, evenements, tournois, mots Wordle et demandes Minecraft sont stockes localement en memoire React. Toute modification est perdue au refresh. Le prochain vrai palier de production est de remplacer les services mockes par une API.
+
+## Qualite
+
+Le build Vite est le garde-fou disponible aujourd'hui:
+
+```bash
+npm run build
+```
+
+Des fichiers de configuration Prettier/ESLint-ready sont presents, mais les dependances ESLint/Prettier ne sont pas installees dans le projet actuel.
