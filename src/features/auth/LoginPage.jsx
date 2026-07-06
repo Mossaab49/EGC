@@ -2,8 +2,12 @@ import React, { useState } from 'react'
 import { Button } from '../../components/ui/Button.jsx'
 import { Field } from '../../components/ui/Field.jsx'
 import { Pill } from '../../components/ui/Pill.jsx'
+import { useAppData } from '../../context/AppDataContext.jsx'
+import { useAuth } from '../../context/AuthContext.jsx'
 
-export function LoginPage({ onLogin, members }) {
+export function LoginPage({ onLoggedIn }) {
+  const { members } = useAppData()
+  const { login } = useAuth()
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [loginError, setLoginError] = useState('')
 
@@ -17,7 +21,9 @@ export function LoginPage({ onLogin, members }) {
       return
     }
     const cleanName = form.name.trim() || knownMember?.name || email.split('@')[0] || 'Membre EGC'
-    onLogin({ name: cleanName, email, role: knownMember?.role || 'Membre' })
+    const profile = { name: cleanName, email, role: knownMember?.role || 'Membre' }
+    login(profile)
+    onLoggedIn(profile)
   }
 
   return (

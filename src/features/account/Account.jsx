@@ -3,8 +3,14 @@ import { PageHeader } from '../../components/shared/PageHeader.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Field } from '../../components/ui/Field.jsx'
 import { Pill } from '../../components/ui/Pill.jsx'
+import { useAppData } from '../../context/AppDataContext.jsx'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { useToastContext } from '../../context/ToastContext.jsx'
 
-export function Account({ user, members, setMembers, toast }) {
+export function Account() {
+  const { user } = useAuth()
+  const { members, setMembers } = useAppData()
+  const { toast } = useToastContext()
   const member = members.find((item) => item.email.toLowerCase() === user.email.toLowerCase())
   const [form, setForm] = useState({ current: '', next: '', confirm: '' })
   const [error, setError] = useState('')

@@ -6,21 +6,34 @@ import { Modal } from '../../components/ui/Modal.jsx'
 import { Pill } from '../../components/ui/Pill.jsx'
 import { emptyEventForm, emptyTournamentForm } from '../../constants/forms.js'
 import { adminTabs } from '../../constants/navigation.js'
+import { useAppData } from '../../context/AppDataContext.jsx'
+import { useToastContext } from '../../context/ToastContext.jsx'
 import { readImageFile } from '../../lib/file-reader.js'
 import { makeGameImage } from '../../lib/game-images.js'
-import { initialMinecraftRequests } from '../../lib/mock-data/index.js'
 
-export function Admin({ toast, events, setEvents, tournaments, setTournaments, wordBank, setWordBank, members, setMembers }) {
+export function Admin() {
+  const {
+    events,
+    members,
+    minecraftRequests,
+    setEvents,
+    setMembers,
+    setMinecraftRequests,
+    setTournaments,
+    setWordBank,
+    tournaments,
+    wordBank,
+  } = useAppData()
+  const { toast } = useToastContext()
   const [active, setActive] = useState('overview')
   const [collapsed, setCollapsed] = useState(false)
   const [motion, setMotion] = useState('boost')
   const [query, setQuery] = useState('')
   const [newMemberOpen, setNewMemberOpen] = useState(false)
-  const [requestRows, setRequestRows] = useState(initialMinecraftRequests)
   const [wordInput, setWordInput] = useState('')
 
   const filteredMembers = useMemo(() => members.filter((member) => `${member.name} ${member.email}`.toLowerCase().includes(query.toLowerCase())), [members, query])
-  const changeRequest = (name, status) => setRequestRows((rows) => rows.map((row) => row.name === name ? { ...row, status } : row))
+  const changeRequest = (name, status) => setMinecraftRequests((rows) => rows.map((row) => row.name === name ? { ...row, status } : row))
   const removeMember = (name) => { setMembers((rows) => rows.filter((member) => member.name !== name)); toast({ title: 'Membre supprime', copy: `${name} a ete retire de la liste.` }) }
   const resetMemberPassword = (email, password) => {
     const cleanPassword = password.trim()
@@ -62,7 +75,7 @@ export function Admin({ toast, events, setEvents, tournaments, setTournaments, w
           {active === 'wordle' && <WordleAdmin words={wordBank} wordInput={wordInput} setWordInput={setWordInput} addWord={addWord} setWordBank={setWordBank} />}
           {active === 'events' && <EventsAdmin rows={events} setRows={setEvents} toast={toast} />}
           {active === 'tournaments' && <TournamentsAdmin tournaments={tournaments} setTournaments={setTournaments} toast={toast} />}
-          {active === 'minecraft' && <MinecraftAdmin rows={requestRows} changeRequest={changeRequest} />}
+          {active === 'minecraft' && <MinecraftAdmin rows={minecraftRequests} changeRequest={changeRequest} />}
         </div>
       </div></div></section>
       <Modal open={newMemberOpen} onClose={() => setNewMemberOpen(false)}><button className="modal-close" onClick={() => setNewMemberOpen(false)}>x</button><div className="modal-symbol">+</div><h2>Creer un membre</h2><p>Un mot de passe temporaire sera genere apres la creation du compte.</p><form className="modal-form" onSubmit={createMember}><Field required label="Nom complet" placeholder="Nom du membre" /><Field required label="Adresse e-mail" placeholder="prenom@etu.uae.ac.ma" /><div className="modal-actions"><Button type="submit">Creer le compte</Button><Button type="button" variant="secondary" onClick={() => setNewMemberOpen(false)}>Annuler</Button></div></form></Modal>

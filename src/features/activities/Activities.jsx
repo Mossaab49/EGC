@@ -6,11 +6,15 @@ import { Tile } from '../../components/shared/Tile.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Field } from '../../components/ui/Field.jsx'
 import { Pill } from '../../components/ui/Pill.jsx'
+import { useAppData } from '../../context/AppDataContext.jsx'
+import { useToastContext } from '../../context/ToastContext.jsx'
 import { makeGameImage } from '../../lib/game-images.js'
 import { buildWordleRows, fallbackEnglishGuessWords, scoreGuess } from '../../lib/wordle.js'
 import { loadEnglishDictionary } from '../../services/dictionary-service.js'
 
-export function Activities({ go, showSuccess, toast, wordBank, tournaments }) {
+export function Activities({ go, showSuccess }) {
+  const { tournaments, wordBank } = useAppData()
+  const { toast } = useToastContext()
   const [tab, setTab] = useState('wordle')
   const [registered, setRegistered] = useState(false)
   const [minecraftSent, setMinecraftSent] = useState(false)
