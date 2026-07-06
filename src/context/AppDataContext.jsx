@@ -6,7 +6,6 @@ import * as minecraftService from '../services/minecraft-service.js'
 import * as tournamentsService from '../services/tournaments-service.js'
 import * as wordleService from '../services/wordle-service.js'
 
-/** @type {import('react').Context<import('../types/domain.js').AppDataContextValue | null>} */
 const AppDataContext = createContext(null)
 
 export function AppDataProvider({ children }) {

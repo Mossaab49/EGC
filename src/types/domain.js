@@ -7,6 +7,8 @@
  * @typedef {'home' | 'events' | 'activities' | 'account' | 'ranking' | 'admin'} PageId
  * @typedef {'overview' | 'members' | 'wordle' | 'events' | 'tournaments' | 'minecraft'} AdminTabId
  * @typedef {'correct' | 'present' | 'absent'} WordleLetterStatus
+ * @typedef {'gold' | 'purple' | 'blue' | 'slate'} PlayerTone
+ * @typedef {[string, string, string, number, PlayerTone]} RankingRow
  */
 
 /**

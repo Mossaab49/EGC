@@ -51,10 +51,11 @@ export async function removeWord(word) {
 export async function submitGuess(guess, answer) {
   const normalizedGuess = guess.trim().toUpperCase()
   const normalizedAnswer = answer.trim().toUpperCase()
+  const statuses = scoreGuess(normalizedGuess, normalizedAnswer).map((status) => status.split(' ')[0])
   return Promise.resolve(successResponse({
     guess: normalizedGuess,
     answer: normalizedAnswer,
-    statuses: scoreGuess(normalizedGuess, normalizedAnswer),
+    statuses: /** @type {import('../types/domain.js').WordleLetterStatus[]} */ (statuses),
     isCorrect: normalizedGuess === normalizedAnswer,
   }))
 }

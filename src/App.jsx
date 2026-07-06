@@ -30,16 +30,23 @@ export default function App() {
 function AppContent() {
   const { user, logout } = useAuth()
   const { toast, toastState } = useToastContext()
-  const [page, setPage] = useState('home')
+  const [page, setPage] = useState(/** @type {import('./types/domain.js').PageId} */ ('home'))
   const [navOpen, setNavOpen] = useState(false)
-  const [signupEvent, setSignupEvent] = useState(null)
-  const [success, setSuccess] = useState(null)
+  const [signupEvent, setSignupEvent] = useState(/** @type {import('./types/domain.js').EventItem | null} */ (null))
+  const [success, setSuccess] = useState(/** @type {import('./types/domain.js').SuccessMessage | null} */ (null))
 
+  /**
+   * @param {import('./types/domain.js').PageId} target
+   */
   const go = (target) => {
     setPage(target)
     setNavOpen(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+
+  /**
+   * @param {import('./types/domain.js').EventItem} event
+   */
   const openSignup = (event) => {
     if (!event?.isSignupOpen) return
     setSignupEvent(event)
@@ -49,10 +56,18 @@ function AppContent() {
     setPage('home')
     setNavOpen(false)
   }
+
+  /**
+   * @param {import('./types/domain.js').AuthUser} profile
+   */
+  const handleLoggedIn = (profile) => {
+    setPage(profile.role === 'Admin' ? 'admin' : 'home')
+  }
+
   const visibleNavItems = user?.role === 'Admin' ? navItems : navItems.filter((item) => item.id !== 'admin')
 
   if (!user) {
-    return <LoginPage onLoggedIn={(profile) => setPage(profile.role === 'Admin' ? 'admin' : 'home')} />
+    return <LoginPage onLoggedIn={handleLoggedIn} />
   }
 
   return (

@@ -95,6 +95,7 @@ export const initialTournaments = [
 
 export const initialWords = ['ARENA', 'PIXEL', 'SQUAD', 'GAMER', 'CLASH', 'LEVEL', 'ESPORT', 'VALORANT', 'MINECRAFT']
 
+/** @type {import('../../types/domain.js').RankingRow[]} */
 export const players = [
   ['1', 'Yassine Amrani', 'Y', 380, 'gold'],
   ['2', 'Salma Rami', 'S', 352, 'purple'],
@@ -103,6 +104,7 @@ export const players = [
   ['5', 'Sara Benali', 'S', 228, 'slate'],
 ]
 
+/** @type {import('../../types/domain.js').RankingRow[]} */
 export const weeklyPlayers = [
   ['1', 'Sara Benali', 'S', 96, 'gold'],
   ['2', 'Omar Lahlou', 'O', 84, 'purple'],

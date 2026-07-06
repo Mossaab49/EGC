@@ -1,11 +1,9 @@
 import React, { createContext, useContext, useMemo, useState } from 'react'
 
-/** @type {import('react').Context<import('../types/domain.js').AuthContextValue | null>} */
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  /** @type {[import('../types/domain.js').AuthUser | null, import('react').Dispatch<import('react').SetStateAction<import('../types/domain.js').AuthUser | null>>]} */
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(/** @type {import('../types/domain.js').AuthUser | null} */ (null))
 
   /** @type {import('../types/domain.js').AuthContextValue} */
   const value = useMemo(() => ({

@@ -3,6 +3,12 @@ import { successResponse } from './service-response.js'
 
 let events = initialEvents.map((event) => ({ ...event }))
 
+/**
+ * @param {import('../types/domain.js').EventItem} event
+ * @returns {import('../types/domain.js').EventItem}
+ */
+const cloneEvent = (event) => ({ ...event })
+
 const cloneEvents = () => events.map((event) => ({ ...event }))
 
 /**
@@ -28,13 +34,14 @@ export async function createEvent(event) {
  * @returns {Promise<import('../types/domain.js').ApiResponse<import('../types/domain.js').EventItem | null>>}
  */
 export async function updateEvent(id, patch) {
+  /** @type {import('../types/domain.js').EventItem | null} */
   let updatedEvent = null
   events = events.map((event) => {
     if (event.id !== id) return event
     updatedEvent = { ...event, ...patch, id }
     return updatedEvent
   })
-  return Promise.resolve(successResponse(updatedEvent ? { ...updatedEvent } : null))
+  return Promise.resolve(successResponse(updatedEvent ? cloneEvent(updatedEvent) : null))
 }
 
 /**

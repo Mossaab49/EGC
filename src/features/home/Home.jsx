@@ -1,5 +1,6 @@
 import { Button } from '../../components/ui/Button.jsx'
 import { Pill } from '../../components/ui/Pill.jsx'
+import { cssVars } from '../../lib/css-vars.js'
 import React from 'react';
 
 const clubPoints = [
@@ -43,7 +44,7 @@ export function Home({ go }) {
           </div>
           <div className="club-grid">
             {clubPoints.map(([title, copy], index) => (
-              <article className="club-card reveal-card" key={title} style={{ '--delay': `${index * 80}ms` }}>
+              <article className="club-card reveal-card" key={title} style={cssVars({ '--delay': `${index * 80}ms` })}>
                 <b>{String(index + 1).padStart(2, '0')}</b>
                 <h3>{title}</h3>
                 <p>{copy}</p>
