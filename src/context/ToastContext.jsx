@@ -1,6 +1,7 @@
 import React, { createContext, useContext } from 'react'
 import { useToast } from '../hooks/useToast.js'
 
+/** @type {import('react').Context<import('../types/domain.js').ToastContextValue | null>} */
 const ToastContext = createContext(null)
 
 export function ToastProvider({ children }) {
@@ -9,6 +10,9 @@ export function ToastProvider({ children }) {
   return <ToastContext.Provider value={toastApi}>{children}</ToastContext.Provider>
 }
 
+/**
+ * @returns {import('../types/domain.js').ToastContextValue}
+ */
 export function useToastContext() {
   const context = useContext(ToastContext)
   if (!context) {

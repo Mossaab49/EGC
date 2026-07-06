@@ -16,11 +16,17 @@
 - Creation d'une couche `src/services` pour remplacer facilement le fetch local par une API plus tard.
 - Creation d'un hook `useToast`.
 - Ajout de types JSDoc centralises dans `src/types/domain.js`.
+- Ajout de `AuthContext`, `ToastContext` et `AppDataContext` pour supprimer le prop drilling depuis `App.jsx`.
+- Generalisation des services domaine : membres, evenements, tournois, Wordle et Minecraft.
+- Uniformisation des retours services avec `ApiResponse<T>` et des adaptateurs memoire prets a etre remplaces par des appels backend.
+- Activation de `checkJs` via `jsconfig.json` pour faire remonter les erreurs JSDoc dans l'editeur sans migrer immediatement en TypeScript.
 
 ## Dettes restantes
 
 - Migrer progressivement les fichiers `.jsx` vers `.tsx`.
-- Installer et activer `typescript`, `eslint`, `prettier`, `@types/react`, `@types/react-dom`.
+- Installer et activer `typescript`, `@types/react` et `@types/react-dom` avant une verification stricte complete.
+- Renforcer ESLint/Prettier avec des regles de type-aware linting lorsque TypeScript sera installe.
 - Remplacer le CSS global par Tailwind/design tokens si Tailwind est vraiment choisi.
 - Decouper davantage `features/admin/Admin.jsx`, qui reste volontairement fonctionnel mais trop dense.
-- Ajouter des tests unitaires sur `src/lib/wordle.js` et les futurs services API.
+- Ajouter des tests unitaires sur `src/lib/wordle.js`, les Contexts et les services mockes.
+- Reintegrer Tailwind et Framer Motion apres stabilisation du contrat backend si la stack cible reste celle annoncee.

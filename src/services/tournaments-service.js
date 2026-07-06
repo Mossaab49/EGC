@@ -1,30 +1,31 @@
 import { initialTournaments } from '../lib/mock-data/index.js'
+import { successResponse } from './service-response.js'
 
 let tournaments = initialTournaments.map((tournament) => ({ ...tournament }))
 
 const cloneTournaments = () => tournaments.map((tournament) => ({ ...tournament }))
 
 /**
- * @returns {Promise<import('../types/domain.js').Tournament[]>}
+ * @returns {Promise<import('../types/domain.js').ApiResponse<import('../types/domain.js').Tournament[]>>}
  */
 export async function getTournaments() {
-  return Promise.resolve(cloneTournaments())
+  return Promise.resolve(successResponse(cloneTournaments()))
 }
 
 /**
  * @param {import('../types/domain.js').Tournament} tournament
- * @returns {Promise<import('../types/domain.js').Tournament>}
+ * @returns {Promise<import('../types/domain.js').ApiResponse<import('../types/domain.js').Tournament>>}
  */
 export async function createTournament(tournament) {
   const createdTournament = { ...tournament }
   tournaments = [...tournaments, createdTournament]
-  return Promise.resolve({ ...createdTournament })
+  return Promise.resolve(successResponse({ ...createdTournament }))
 }
 
 /**
  * @param {string} id
  * @param {Partial<import('../types/domain.js').Tournament>} patch
- * @returns {Promise<import('../types/domain.js').Tournament | null>}
+ * @returns {Promise<import('../types/domain.js').ApiResponse<import('../types/domain.js').Tournament | null>>}
  */
 export async function updateTournament(id, patch) {
   let updatedTournament = null
@@ -33,35 +34,35 @@ export async function updateTournament(id, patch) {
     updatedTournament = { ...tournament, ...patch, id }
     return updatedTournament
   })
-  return Promise.resolve(updatedTournament ? { ...updatedTournament } : null)
+  return Promise.resolve(successResponse(updatedTournament ? { ...updatedTournament } : null))
 }
 
 /**
  * @param {string} id
- * @returns {Promise<import('../types/domain.js').Tournament | null>}
+ * @returns {Promise<import('../types/domain.js').ApiResponse<import('../types/domain.js').Tournament | null>>}
  */
 export async function registerToTournament(id) {
   const target = tournaments.find((tournament) => tournament.id === id)
-  if (!target || target.registered >= target.capacity) return Promise.resolve(null)
+  if (!target || target.registered >= target.capacity) return Promise.resolve(successResponse(null))
   return updateTournament(id, { registered: target.registered + 1 })
 }
 
 /**
  * @param {string} id
- * @returns {Promise<import('../types/domain.js').Tournament | null>}
+ * @returns {Promise<import('../types/domain.js').ApiResponse<import('../types/domain.js').Tournament | null>>}
  */
 export async function cancelRegistration(id) {
   const target = tournaments.find((tournament) => tournament.id === id)
-  if (!target || target.registered <= 0) return Promise.resolve(null)
+  if (!target || target.registered <= 0) return Promise.resolve(successResponse(null))
   return updateTournament(id, { registered: target.registered - 1 })
 }
 
 /**
  * @param {string} id
- * @returns {Promise<boolean>}
+ * @returns {Promise<import('../types/domain.js').ApiResponse<boolean>>}
  */
 export async function deleteTournament(id) {
   const previousLength = tournaments.length
   tournaments = tournaments.filter((tournament) => tournament.id !== id)
-  return Promise.resolve(tournaments.length !== previousLength)
+  return Promise.resolve(successResponse(tournaments.length !== previousLength))
 }

@@ -6,6 +6,7 @@
  * @typedef {'Acceptee' | 'Refusee' | 'En attente'} RequestStatus
  * @typedef {'home' | 'events' | 'activities' | 'account' | 'ranking' | 'admin'} PageId
  * @typedef {'overview' | 'members' | 'wordle' | 'events' | 'tournaments' | 'minecraft'} AdminTabId
+ * @typedef {'correct' | 'present' | 'absent'} WordleLetterStatus
  */
 
 /**
@@ -52,6 +53,78 @@
  * @typedef {object} ToastMessage
  * @property {string} title
  * @property {string} copy
+ */
+
+/**
+ * @typedef {object} WordleAttempt
+ * @property {string} guess
+ * @property {string} answer
+ * @property {WordleLetterStatus[]} statuses
+ * @property {boolean} isCorrect
+ */
+
+/**
+ * @typedef {object} MinecraftRequest
+ * @property {string} name
+ * @property {string} launcher
+ * @property {RequestStatus} status
+ */
+
+/**
+ * @template T
+ * @typedef {object} ApiResponse
+ * @property {boolean} ok
+ * @property {T} data
+ * @property {string | null} error
+ */
+
+/**
+ * @typedef {object} AuthUser
+ * @property {string} name
+ * @property {string} email
+ * @property {UserRole} role
+ */
+
+/**
+ * @typedef {object} AuthContextValue
+ * @property {AuthUser | null} user
+ * @property {(profile: AuthUser) => void} login
+ * @property {() => void} logout
+ */
+
+/**
+ * @typedef {object} ToastContextValue
+ * @property {(payload: ToastMessage) => void} toast
+ * @property {ToastMessage | null} toastState
+ */
+
+/**
+ * @typedef {object} AppDataContextValue
+ * @property {boolean} isLoading
+ * @property {Member[]} members
+ * @property {(member: Member) => Promise<Member>} createMember
+ * @property {(email: string, patch: Partial<Member>) => Promise<Member | null>} updateMember
+ * @property {(email: string) => Promise<boolean>} deleteMember
+ * @property {EventItem[]} events
+ * @property {(event: EventItem) => Promise<EventItem>} createEvent
+ * @property {(id: string, patch: Partial<EventItem>) => Promise<EventItem | null>} updateEvent
+ * @property {(id: string) => Promise<boolean>} deleteEvent
+ * @property {(id: string) => Promise<EventItem | null>} openEventSignup
+ * @property {Tournament[]} tournaments
+ * @property {(tournament: Tournament) => Promise<Tournament>} createTournament
+ * @property {(id: string, patch: Partial<Tournament>) => Promise<Tournament | null>} updateTournament
+ * @property {(id: string) => Promise<boolean>} deleteTournament
+ * @property {(id: string) => Promise<Tournament | null>} registerToTournament
+ * @property {(id: string) => Promise<Tournament | null>} cancelRegistration
+ * @property {string[]} wordBank
+ * @property {(word: string) => Promise<string[]>} addWord
+ * @property {(word: string) => Promise<string[]>} removeWord
+ * @property {() => Promise<string>} getTodayWord
+ * @property {(guess: string, answer: string) => Promise<WordleAttempt>} submitWordleGuess
+ * @property {() => Promise<string[]>} loadEnglishGuessWords
+ * @property {MinecraftRequest[]} minecraftRequests
+ * @property {(request: Omit<MinecraftRequest, 'status'>) => Promise<MinecraftRequest>} submitMinecraftParticipationRequest
+ * @property {(name: string, status: RequestStatus) => Promise<MinecraftRequest | null>} updateMinecraftRequestStatus
  */
 
 /**
