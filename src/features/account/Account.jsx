@@ -3,15 +3,21 @@ import { PageHeader } from '../../components/shared/PageHeader.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Field } from '../../components/ui/Field.jsx'
 import { Pill } from '../../components/ui/Pill.jsx'
+import { useAppData } from '../../context/AppDataContext.jsx'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { useToastContext } from '../../context/ToastContext.jsx'
 
-export function Account({ user, members, setMembers, toast }) {
+export function Account() {
+  const { user } = useAuth()
+  const { createMember, members, updateMember } = useAppData()
+  const { toast } = useToastContext()
   const member = members.find((item) => item.email.toLowerCase() === user.email.toLowerCase())
   const [form, setForm] = useState({ current: '', next: '', confirm: '' })
   const [error, setError] = useState('')
   const hasPassword = Boolean(member?.password)
   const updateForm = (key, value) => { setError(''); setForm((current) => ({ ...current, [key]: value })) }
 
-  const submitPassword = (event) => {
+  const submitPassword = async (event) => {
     event.preventDefault()
     const nextPassword = form.next.trim()
     if (hasPassword && form.current !== member.password) {
@@ -36,9 +42,11 @@ export function Account({ user, members, setMembers, toast }) {
       password: nextPassword,
       passwordUpdatedAt: new Date().toLocaleDateString('fr-FR'),
     }
-    setMembers((rows) => rows.some((item) => item.email.toLowerCase() === user.email.toLowerCase())
-      ? rows.map((item) => item.email.toLowerCase() === user.email.toLowerCase() ? { ...item, ...updatedMember } : item)
-      : [...rows, updatedMember])
+    if (members.some((item) => item.email.toLowerCase() === user.email.toLowerCase())) {
+      await updateMember(user.email, updatedMember)
+    } else {
+      await createMember(updatedMember)
+    }
     setForm({ current: '', next: '', confirm: '' })
     toast({ title: 'Mot de passe modifie', copy: 'Ton nouveau mot de passe est actif pour cette session locale.' })
   }

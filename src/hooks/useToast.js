@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 /**
  * Centralizes transient toast state and cleanup.
+ *
+ * @param {number} timeout
+ * @returns {import('../types/domain.js').ToastContextValue}
  */
 export function useToast(timeout = 3600) {
   const [toastState, setToastState] = useState(null)

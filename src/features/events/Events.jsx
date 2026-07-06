@@ -4,6 +4,7 @@ import { PageHeader } from '../../components/shared/PageHeader.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Pill } from '../../components/ui/Pill.jsx'
+import { useAppData } from '../../context/AppDataContext.jsx'
 import { makeGameImage } from '../../lib/game-images.js'
 
 function EventCard({ event, onSignup, onDetails, mode = 'upcoming' }) {
@@ -53,7 +54,8 @@ function EventInfoModal({ event, onClose }) {
   )
 }
 
-export function Events({ events, openSignup }) {
+export function Events({ openSignup }) {
+  const { events } = useAppData()
   const [selectedEvent, setSelectedEvent] = useState(null)
   const upcoming = events.filter((event) => event.status !== 'Passe')
   const past = events.filter((event) => event.status === 'Passe')

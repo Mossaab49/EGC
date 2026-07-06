@@ -6,11 +6,21 @@ import { Tile } from '../../components/shared/Tile.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Field } from '../../components/ui/Field.jsx'
 import { Pill } from '../../components/ui/Pill.jsx'
+import { useAppData } from '../../context/AppDataContext.jsx'
+import { useToastContext } from '../../context/ToastContext.jsx'
 import { makeGameImage } from '../../lib/game-images.js'
 import { buildWordleRows, fallbackEnglishGuessWords, scoreGuess } from '../../lib/wordle.js'
-import { loadEnglishDictionary } from '../../services/dictionary-service.js'
 
-export function Activities({ go, showSuccess, toast, wordBank, tournaments }) {
+export function Activities({ go, showSuccess }) {
+  const {
+    cancelRegistration,
+    loadEnglishGuessWords,
+    registerToTournament,
+    submitMinecraftParticipationRequest,
+    tournaments,
+    wordBank,
+  } = useAppData()
+  const { toast } = useToastContext()
   const [tab, setTab] = useState('wordle')
   const [registered, setRegistered] = useState(false)
   const [minecraftSent, setMinecraftSent] = useState(false)
@@ -24,21 +34,21 @@ export function Activities({ go, showSuccess, toast, wordBank, tournaments }) {
         <div className="tabs">{[['wordle', 'Wordle EGC'], ['tournament', 'Tournoi hebdomadaire'], ['minecraft', 'Serveur Minecraft']].map(([id, label]) => <button key={id} onClick={() => setTab(id)} className={`tab ${tab === id ? 'active' : ''}`}>{label}</button>)}</div>
       </PageHeader>
       <section className="section compact"><div className="container">
-        {tab === 'wordle' && <WordleGame wordBank={wordBank} showSuccess={showSuccess} go={go} />}
+        {tab === 'wordle' && <WordleGame wordBank={wordBank} showSuccess={showSuccess} go={go} loadEnglishGuessWords={loadEnglishGuessWords} />}
         {tab === 'tournament' && <div className="tournament-layout fade-enter">
-          <div className="tournament-banner image-tournament"><img src={tournamentImage} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = tournamentFallbackImage }} /><Pill tone="gold">TOURNOI HEBDOMADAIRE</Pill><Button className="tournament-register-btn" variant={registered ? 'danger' : 'gold'} onClick={() => { if (registered) { setRegistered(false); toast({ title: 'Inscription annulee', copy: 'Tu peux te reinscrire avant la fermeture du tournoi.' }); return } setRegistered(true); showSuccess({ title: 'Inscription confirmee', copy: 'Ton dossard #EGC-024 est reserve. Le lien Discord sera envoye avant le tournoi.', action: () => go('ranking'), actionLabel: 'Voir le classement' }) }}>{registered ? "Annuler l'inscription" : "S'inscrire au tournoi"}</Button></div>
+          <div className="tournament-banner image-tournament"><img src={tournamentImage} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = tournamentFallbackImage }} /><Pill tone="gold">TOURNOI HEBDOMADAIRE</Pill><Button className="tournament-register-btn" variant={registered ? 'danger' : 'gold'} onClick={async () => { if (registered) { if (activeTournament) await cancelRegistration(activeTournament.id); setRegistered(false); toast({ title: 'Inscription annulee', copy: 'Tu peux te reinscrire avant la fermeture du tournoi.' }); return } if (activeTournament) await registerToTournament(activeTournament.id); setRegistered(true); showSuccess({ title: 'Inscription confirmee', copy: 'Ton dossard #EGC-024 est reserve. Le lien Discord sera envoye avant le tournoi.', action: () => go('ranking'), actionLabel: 'Voir le classement' }) }}>{registered ? "Annuler l'inscription" : "S'inscrire au tournoi"}</Button></div>
           <div className="panel details-panel"><h3>Infos du tournoi</h3><Detail label="Format" text={activeTournament?.format || 'Format a definir'} /><Detail label="Recompense" text={activeTournament?.reward || 'Recompense a definir'} /><Detail label="Date" text={activeTournament?.date || 'Date a definir'} />{registered && <div className="ticket"><strong>OK Inscription confirmee</strong></div>}</div>
         </div>}
         {tab === 'minecraft' && <div className="minecraft-layout fade-enter">
           <div className="minecraft-banner"><Pill tone="gold">OUVERT AUX MEMBRES</Pill><h2>EGC<br />MINECRAFT</h2><p>Survie - Creation - Evenements<br />Un monde construit ensemble.</p><small>Respect - entraide - fair-play</small></div>
-          <form className="panel minecraft-form" onSubmit={(event) => { event.preventDefault(); setMinecraftSent(true); toast({ title: 'Demande envoyee', copy: 'Le responsable Minecraft recevra tes informations.' }) }}><h3>Demander une participation</h3><p>Ta demande sera transmise au responsable du serveur.</p><Field required label="Pseudo Minecraft" placeholder="ex. gamer_ensat" /><Field required label="Launcher utilise" placeholder="ex. TLauncher / officiel" /><label className="check"><input required type="checkbox" /> J'accepte les regles de conduite du serveur.</label><Button type="submit" variant={minecraftSent ? 'success' : 'primary'}>{minecraftSent ? 'OK Demande envoyee' : 'Envoyer la demande'}</Button></form>
+          <form className="panel minecraft-form" onSubmit={async (event) => { event.preventDefault(); const data = new FormData(event.currentTarget); await submitMinecraftParticipationRequest({ name: String(data.get('pseudo-minecraft') || '').trim(), launcher: String(data.get('launcher-utilise') || '').trim() }); setMinecraftSent(true); toast({ title: 'Demande envoyee', copy: 'Le responsable Minecraft recevra tes informations.' }) }}><h3>Demander une participation</h3><p>Ta demande sera transmise au responsable du serveur.</p><Field required label="Pseudo Minecraft" placeholder="ex. gamer_ensat" /><Field required label="Launcher utilise" placeholder="ex. TLauncher / officiel" /><label className="check"><input required type="checkbox" /> J'accepte les regles de conduite du serveur.</label><Button type="submit" variant={minecraftSent ? 'success' : 'primary'}>{minecraftSent ? 'OK Demande envoyee' : 'Envoyer la demande'}</Button></form>
         </div>}
       </div></section>
     </>
   )
 }
 
-function WordleGame({ wordBank, showSuccess, go }) {
+function WordleGame({ wordBank, showSuccess, go, loadEnglishGuessWords }) {
   const playableWords = useMemo(() => wordBank.filter((word) => word.length >= 3), [wordBank])
   const [englishGuessWords, setEnglishGuessWords] = useState(fallbackEnglishGuessWords)
   const [dictionaryLoaded, setDictionaryLoaded] = useState(false)
@@ -61,7 +71,7 @@ function WordleGame({ wordBank, showSuccess, go }) {
     let cancelled = false
 
     async function loadDictionary() {
-      const words = await loadEnglishDictionary()
+      const words = await loadEnglishGuessWords()
       if (words.length && !cancelled) {
         setEnglishGuessWords(words)
         setDictionaryLoaded(true)

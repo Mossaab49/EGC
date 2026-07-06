@@ -2,14 +2,22 @@ import React, { useState } from 'react'
 import { Button } from '../../components/ui/Button.jsx'
 import { Field } from '../../components/ui/Field.jsx'
 import { Pill } from '../../components/ui/Pill.jsx'
+import { useAppData } from '../../context/AppDataContext.jsx'
+import { useAuth } from '../../context/AuthContext.jsx'
 
-export function LoginPage({ onLogin, members }) {
+export function LoginPage({ onLoggedIn }) {
+  const { isLoading, members } = useAppData()
+  const { login } = useAuth()
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [loginError, setLoginError] = useState('')
 
   const updateForm = (key, value) => { setLoginError(''); setForm((current) => ({ ...current, [key]: value })) }
   const submitLogin = (event) => {
     event.preventDefault()
+    if (isLoading) {
+      setLoginError('Chargement des donnees du prototype...')
+      return
+    }
     const email = form.email.trim().toLowerCase()
     const knownMember = members.find((member) => member.email.toLowerCase() === email)
     if (knownMember?.password && knownMember.password !== form.password) {
@@ -17,7 +25,9 @@ export function LoginPage({ onLogin, members }) {
       return
     }
     const cleanName = form.name.trim() || knownMember?.name || email.split('@')[0] || 'Membre EGC'
-    onLogin({ name: cleanName, email, role: knownMember?.role || 'Membre' })
+    const profile = { name: cleanName, email, role: knownMember?.role || 'Membre' }
+    login(profile)
+    onLoggedIn(profile)
   }
 
   return (
@@ -38,7 +48,7 @@ export function LoginPage({ onLogin, members }) {
         <Field required label="Adresse e-mail" value={form.email} onChange={(event) => updateForm('email', event.target.value)} placeholder="membre@egc.ma" />
         <Field required label="Mot de passe" type="password" value={form.password} onChange={(event) => updateForm('password', event.target.value)} placeholder="********" />
         {loginError && <p className="login-error">{loginError}</p>}
-        <Button type="submit">Se connecter</Button>
+        <Button type="submit" disabled={isLoading}>{isLoading ? 'Chargement...' : 'Se connecter'}</Button>
       </form>
     </main>
   )
