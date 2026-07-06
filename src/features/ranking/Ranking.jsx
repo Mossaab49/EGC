@@ -2,11 +2,12 @@ import React, { useState } from 'react'
 import { PageHeader } from '../../components/shared/PageHeader.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Pill } from '../../components/ui/Pill.jsx'
-import { players, weeklyPlayers } from '../../lib/mock-data/index.js'
+import { useAppData } from '../../context/AppDataContext.jsx'
 
 export function Ranking({ go }) {
-  const [period, setPeriod] = useState('monthly')
-  const rows = period === 'monthly' ? players : weeklyPlayers
+  const { rankings } = useAppData()
+  const [period, setPeriod] = useState(/** @type {import('../../types/domain.js').RankingPeriod} */ ('monthly'))
+  const rows = rankings[period]
 
   return (
     <>

@@ -3,6 +3,7 @@ import { loadEnglishDictionary } from '../services/dictionary-service.js'
 import * as eventsService from '../services/events-service.js'
 import * as membersService from '../services/members-service.js'
 import * as minecraftService from '../services/minecraft-service.js'
+import * as rankingService from '../services/ranking-service.js'
 import * as tournamentsService from '../services/tournaments-service.js'
 import * as wordleService from '../services/wordle-service.js'
 
@@ -14,18 +15,20 @@ export function AppDataProvider({ children }) {
   const [tournaments, setTournaments] = useState([])
   const [wordBank, setWordBank] = useState([])
   const [minecraftRequests, setMinecraftRequests] = useState([])
+  const [rankings, setRankings] = useState(/** @type {import('../types/domain.js').Rankings} */ ({ monthly: [], weekly: [] }))
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
 
     async function loadInitialData() {
-      const [membersResponse, eventsResponse, tournamentsResponse, wordBankResponse, minecraftRequestsResponse] = await Promise.all([
+      const [membersResponse, eventsResponse, tournamentsResponse, wordBankResponse, minecraftRequestsResponse, rankingsResponse] = await Promise.all([
         membersService.getMembers(),
         eventsService.getEvents(),
         tournamentsService.getTournaments(),
         wordleService.getWordBank(),
         minecraftService.getRequests(),
+        rankingService.getRankings(),
       ])
 
       if (cancelled) return
@@ -34,6 +37,7 @@ export function AppDataProvider({ children }) {
       setTournaments(tournamentsResponse.data)
       setWordBank(wordBankResponse.data)
       setMinecraftRequests(minecraftRequestsResponse.data)
+      setRankings(rankingsResponse.data)
       setIsLoading(false)
     }
 
@@ -182,6 +186,7 @@ export function AppDataProvider({ children }) {
     minecraftRequests,
     submitMinecraftParticipationRequest,
     updateMinecraftRequestStatus,
+    rankings,
   }), [
     addWord,
     cancelRegistration,
@@ -200,6 +205,7 @@ export function AppDataProvider({ children }) {
     openEventSignup,
     registerToTournament,
     removeWord,
+    rankings,
     submitMinecraftParticipationRequest,
     submitWordleGuess,
     tournaments,

@@ -8,6 +8,7 @@
  * @typedef {'overview' | 'members' | 'wordle' | 'events' | 'tournaments' | 'minecraft'} AdminTabId
  * @typedef {'correct' | 'present' | 'absent'} WordleLetterStatus
  * @typedef {'gold' | 'purple' | 'blue' | 'slate'} PlayerTone
+ * @typedef {'monthly' | 'weekly'} RankingPeriod
  * @typedef {[string, string, string, number, PlayerTone]} RankingRow
  */
 
@@ -73,6 +74,12 @@
  */
 
 /**
+ * @typedef {object} Rankings
+ * @property {RankingRow[]} monthly
+ * @property {RankingRow[]} weekly
+ */
+
+/**
  * @template T
  * @typedef {object} ApiResponse
  * @property {boolean} ok
@@ -127,6 +134,7 @@
  * @property {MinecraftRequest[]} minecraftRequests
  * @property {(request: Omit<MinecraftRequest, 'status'>) => Promise<MinecraftRequest>} submitMinecraftParticipationRequest
  * @property {(name: string, status: RequestStatus) => Promise<MinecraftRequest | null>} updateMinecraftRequestStatus
+ * @property {Rankings} rankings
  */
 
 /**
