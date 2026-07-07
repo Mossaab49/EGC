@@ -89,15 +89,34 @@
 
 /**
  * @typedef {object} AuthUser
+ * @property {string=} id
  * @property {string} name
  * @property {string} email
  * @property {UserRole} role
+ * @property {boolean=} mustChangePassword
+ */
+
+/**
+ * @typedef {object} BackendAuthUser
+ * @property {string} id
+ * @property {string} name
+ * @property {string} email
+ * @property {'ADMIN' | 'MEMBER'} role
+ * @property {boolean} mustChangePassword
+ */
+
+/**
+ * @typedef {object} AuthSession
+ * @property {string} accessToken
+ * @property {AuthUser} user
  */
 
 /**
  * @typedef {object} AuthContextValue
  * @property {AuthUser | null} user
- * @property {(profile: AuthUser) => void} login
+ * @property {string | null} token
+ * @property {(email: string, password: string) => Promise<AuthUser>} login
+ * @property {(currentPassword: string, newPassword: string) => Promise<AuthUser>} changePassword
  * @property {() => void} logout
  */
 
