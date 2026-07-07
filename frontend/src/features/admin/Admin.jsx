@@ -158,10 +158,15 @@ function EventsAdmin({ rows, createEvent, updateEvent, deleteEvent, openEventSig
       imageUrl: form.imageUrl || makeGameImage(title.slice(0, 10).toUpperCase(), '#1E50B4', '#0D0D1A'),
       isSignupOpen: editingId ? rows.find((row) => row.id === editingId)?.isSignupOpen || false : false,
     }
-    if (editingId) {
-      await updateEvent(editingId, payload)
-    } else {
-      await createEvent(payload)
+    try {
+      if (editingId) {
+        await updateEvent(editingId, payload)
+      } else {
+        await createEvent(payload)
+      }
+    } catch (error) {
+      toast({ title: 'Image non enregistree', copy: error instanceof Error ? error.message : 'Impossible d enregistrer cet evenement.' })
+      return
     }
     toast({ title: editingId ? 'Evenement modifie' : 'Evenement cree', copy: `${payload.title} est pret.` })
     resetForm()

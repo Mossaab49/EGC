@@ -74,32 +74,30 @@ export function AppDataProvider({ children }) {
   }, [token])
 
   const createEvent = useCallback(async (event) => {
-    const { data: createdEvent } = await eventsService.createEvent(event)
+    const { data: createdEvent } = await eventsService.createEvent(event, token)
     setEvents((items) => [...items, createdEvent])
     return createdEvent
-  }, [])
+  }, [token])
 
   const updateEvent = useCallback(async (id, patch) => {
-    const { data: updatedEvent } = await eventsService.updateEvent(id, patch)
+    const { data: updatedEvent } = await eventsService.updateEvent(id, patch, token)
     if (!updatedEvent) return null
     setEvents((items) => items.map((item) => item.id === id ? updatedEvent : item))
     return updatedEvent
-  }, [])
+  }, [token])
 
   const deleteEvent = useCallback(async (id) => {
-    const { data: wasDeleted } = await eventsService.deleteEvent(id)
+    const { data: wasDeleted } = await eventsService.deleteEvent(id, token)
     if (wasDeleted) setEvents((items) => items.filter((item) => item.id !== id))
     return wasDeleted
-  }, [])
+  }, [token])
 
   const openEventSignup = useCallback(async (id) => {
-    const responses = await Promise.all(events.map((event) => eventsService.updateEvent(event.id, {
-      isSignupOpen: event.id === id && event.status !== 'Passe',
-    })))
-    const cleanEvents = responses.map((response) => response.data).filter(Boolean)
-    setEvents(cleanEvents)
-    return cleanEvents.find((event) => event.id === id) || null
-  }, [events])
+    const { data: updatedEvent } = await eventsService.openEventSignup(id, token)
+    if (!updatedEvent) return null
+    setEvents((items) => items.map((item) => item.id === id ? updatedEvent : { ...item, isSignupOpen: false }))
+    return updatedEvent
+  }, [token])
 
   const createTournament = useCallback(async (tournament) => {
     const { data: createdTournament } = await tournamentsService.createTournament(tournament)
