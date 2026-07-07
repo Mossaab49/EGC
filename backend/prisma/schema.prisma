@@ -36,11 +36,12 @@ enum MinecraftRequestStatus {
 }
 
 model User {
-  id                String               @id @default(cuid())
+  id                String               @id @default(uuid()) @db.Uuid
   name              String
   email             String               @unique
   passwordHash      String
   role              UserRole             @default(MEMBER)
+  mustChangePassword Boolean              @default(true)
   points            Int                  @default(0)
   status            MemberStatus         @default(INVITED)
   createdAt         DateTime             @default(now())
@@ -84,7 +85,7 @@ model Tournament {
 
 model TournamentEntry {
   id           String     @id @default(cuid())
-  userId       String
+  userId       String     @db.Uuid
   tournamentId String
   createdAt    DateTime   @default(now())
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -102,7 +103,7 @@ model Word {
 
 model WordleAttempt {
   id        String   @id @default(cuid())
-  userId    String
+  userId    String   @db.Uuid
   guess     String
   answer    String
   isCorrect Boolean
@@ -113,7 +114,7 @@ model WordleAttempt {
 
 model MinecraftRequest {
   id        String                 @id @default(cuid())
-  userId    String?
+  userId    String?                @db.Uuid
   name      String
   launcher  String
   status    MinecraftRequestStatus @default(PENDING)

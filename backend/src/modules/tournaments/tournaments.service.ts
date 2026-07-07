@@ -2,7 +2,10 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { CreateTournamentDto } from './dto/create-tournament.dto'
 import { UpdateTournamentDto } from './dto/update-tournament.dto'
 
-type TournamentRecord = CreateTournamentDto & { id: string }
+type TournamentRecord = Omit<CreateTournamentDto, 'registered'> & {
+  id: string
+  registered: number
+}
 
 const tournaments: TournamentRecord[] = []
 

@@ -16,7 +16,13 @@ async function bootstrap() {
   app.setGlobalPrefix(apiPrefix)
   app.enableCors({ origin: corsOrigin, credentials: true })
   app.use(helmet())
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  )
   app.useGlobalFilters(new HttpExceptionFilter())
   app.useGlobalInterceptors(new ResponseInterceptor())
 

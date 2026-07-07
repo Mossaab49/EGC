@@ -14,11 +14,11 @@ export function validateConfig(config: Record<string, unknown>): AppEnvironment 
   return {
     NODE_ENV: parseEnvironment(config.NODE_ENV),
     PORT: Number(config.PORT ?? 4000),
-    API_PREFIX: String(config.API_PREFIX ?? 'api/v1'),
+    API_PREFIX: optionalString(config.API_PREFIX, 'api/v1'),
     DATABASE_URL: requiredString(config.DATABASE_URL, 'DATABASE_URL'),
     JWT_SECRET: requiredString(config.JWT_SECRET, 'JWT_SECRET'),
-    JWT_EXPIRES_IN: String(config.JWT_EXPIRES_IN ?? '7d'),
-    CORS_ORIGIN: String(config.CORS_ORIGIN ?? 'http://localhost:5173'),
+    JWT_EXPIRES_IN: optionalString(config.JWT_EXPIRES_IN, '7d'),
+    CORS_ORIGIN: optionalString(config.CORS_ORIGIN, 'http://localhost:5173'),
   }
 }
 
@@ -32,4 +32,8 @@ function requiredString(value: unknown, key: string): string {
     throw new Error(`${key} is required`)
   }
   return value
+}
+
+function optionalString(value: unknown, fallback: string): string {
+  return typeof value === 'string' && value.length > 0 ? value : fallback
 }

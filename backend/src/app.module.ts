@@ -8,12 +8,14 @@ import { RankingModule } from './modules/ranking/ranking.module'
 import { TournamentsModule } from './modules/tournaments/tournaments.module'
 import { UsersModule } from './modules/users/users.module'
 import { WordleModule } from './modules/wordle/wordle.module'
+import configuration from './config/configuration'
 import { validateConfig } from './config/env.validation'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [configuration],
       validate: validateConfig,
     }),
     DatabaseModule,

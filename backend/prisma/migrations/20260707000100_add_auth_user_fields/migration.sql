@@ -1,0 +1,2 @@
+-- No-op migration kept to satisfy Prisma migration history.
+-- The current auth/user schema is created by the init migration.
