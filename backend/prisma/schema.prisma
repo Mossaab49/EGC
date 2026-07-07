@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
+enum MemberStatus {
+  ACTIVE
+  INVITED
+}
+
+enum EventStatus {
+  UPCOMING
+  PAST
+  DRAFT
+}
+
+enum TournamentStatus {
+  ACTIVE
+  DRAFT
+  FINISHED
+}
+
+enum MinecraftRequestStatus {
+  ACCEPTED
+  REJECTED
+  PENDING
+}
+
+model User {
+  id                String               @id @default(cuid())
+  name              String
+  email             String               @unique
+  passwordHash      String
+  role              UserRole             @default(MEMBER)
+  points            Int                  @default(0)
+  status            MemberStatus         @default(INVITED)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  tournamentEntries TournamentEntry[]
+  wordleAttempts    WordleAttempt[]
+  minecraftRequests MinecraftRequest[]
+}
+
+model Event {
+  id           String      @id @default(cuid())
+  title        String
+  dateLabel    String
+  venue        String
+  imageUrl     String
+  status       EventStatus @default(DRAFT)
+  category     String
+  details      String
+  rules        String
+  postUrl      String
+  isSignupOpen Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Tournament {
+  id          String             @id @default(cuid())
+  title       String
+  game        String
+  dateLabel   String
+  capacity    Int
+  registered  Int                @default(0)
+  status      TournamentStatus   @default(DRAFT)
+  reward      String
+  format      String
+  imageUrl    String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  entries     TournamentEntry[]
+}
+
+model TournamentEntry {
+  id           String     @id @default(cuid())
+  userId       String
+  tournamentId String
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tournamentId])
+}
+
+model Word {
+  id        String   @id @default(cuid())
+  value     String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model WordleAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  guess     String
+  answer    String
+  isCorrect Boolean
+  points    Int      @default(0)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MinecraftRequest {
+  id        String                 @id @default(cuid())
+  userId    String?
+  name      String
+  launcher  String
+  status    MinecraftRequestStatus @default(PENDING)
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+  user      User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
