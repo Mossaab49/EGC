@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useAuth } from './AuthContext.jsx'
 import { loadEnglishDictionary } from '../services/dictionary-service.js'
 import * as eventsService from '../services/events-service.js'
 import * as membersService from '../services/members-service.js'
@@ -10,6 +11,7 @@ import * as wordleService from '../services/wordle-service.js'
 const AppDataContext = createContext(null)
 
 export function AppDataProvider({ children }) {
+  const { token } = useAuth()
   const [members, setMembers] = useState([])
   const [events, setEvents] = useState([])
   const [tournaments, setTournaments] = useState([])
@@ -23,7 +25,7 @@ export function AppDataProvider({ children }) {
 
     async function loadInitialData() {
       const [membersResponse, eventsResponse, tournamentsResponse, wordBankResponse, minecraftRequestsResponse, rankingsResponse] = await Promise.all([
-        membersService.getMembers(),
+        membersService.getMembers(token),
         eventsService.getEvents(),
         tournamentsService.getTournaments(),
         wordleService.getWordBank(),
@@ -43,26 +45,33 @@ export function AppDataProvider({ children }) {
 
     loadInitialData()
     return () => { cancelled = true }
-  }, [])
+  }, [token])
 
   const createMember = useCallback(async (member) => {
-    const { data: createdMember } = await membersService.createMember(member)
+    const { data: createdMember } = await membersService.createMember(member, token)
     setMembers((items) => [...items, createdMember])
     return createdMember
-  }, [])
+  }, [token])
 
   const updateMember = useCallback(async (email, patch) => {
-    const { data: updatedMember } = await membersService.updateMember(email, patch)
+    const { data: updatedMember } = await membersService.updateMember(email, patch, token)
     if (!updatedMember) return null
-    setMembers((items) => items.map((item) => item.email.toLowerCase() === email.toLowerCase() ? updatedMember : item))
+    setMembers((items) => items.map((item) => item.email.toLowerCase() === email.toLowerCase() || item.id === updatedMember.id ? updatedMember : item))
     return updatedMember
-  }, [])
+  }, [token])
+
+  const resetMemberPassword = useCallback(async (email, password) => {
+    const { data: updatedMember } = await membersService.resetMemberPassword(email, password, token)
+    if (!updatedMember) return null
+    setMembers((items) => items.map((item) => item.email.toLowerCase() === email.toLowerCase() || item.id === updatedMember.id ? updatedMember : item))
+    return updatedMember
+  }, [token])
 
   const deleteMember = useCallback(async (email) => {
-    const { data: wasDeleted } = await membersService.deleteMember(email)
+    const { data: wasDeleted } = await membersService.deleteMember(email, token)
     if (wasDeleted) setMembers((items) => items.filter((item) => item.email.toLowerCase() !== email.toLowerCase()))
     return wasDeleted
-  }, [])
+  }, [token])
 
   const createEvent = useCallback(async (event) => {
     const { data: createdEvent } = await eventsService.createEvent(event)
@@ -165,6 +174,7 @@ export function AppDataProvider({ children }) {
     members,
     createMember,
     updateMember,
+    resetMemberPassword,
     deleteMember,
     events,
     createEvent,
@@ -211,6 +221,7 @@ export function AppDataProvider({ children }) {
     tournaments,
     updateEvent,
     updateMember,
+    resetMemberPassword,
     updateMinecraftRequestStatus,
     updateTournament,
     wordBank,

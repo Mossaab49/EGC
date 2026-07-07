@@ -14,6 +14,7 @@
 
 /**
  * @typedef {object} Member
+ * @property {string=} id
  * @property {string} name
  * @property {string} email
  * @property {UserRole} role
@@ -21,6 +22,7 @@
  * @property {MemberStatus} status
  * @property {string=} password
  * @property {string=} passwordUpdatedAt
+ * @property {boolean=} mustChangePassword
  */
 
 /**
@@ -132,6 +134,7 @@
  * @property {Member[]} members
  * @property {(member: Member) => Promise<Member>} createMember
  * @property {(email: string, patch: Partial<Member>) => Promise<Member | null>} updateMember
+ * @property {(email: string, password: string) => Promise<Member | null>} resetMemberPassword
  * @property {(email: string) => Promise<boolean>} deleteMember
  * @property {EventItem[]} events
  * @property {(event: EventItem) => Promise<EventItem>} createEvent

@@ -25,6 +25,7 @@ export function Admin() {
     members,
     minecraftRequests,
     openEventSignup,
+    resetMemberPassword,
     removeWord,
     tournaments,
     updateEvent,
@@ -49,14 +50,14 @@ export function Admin() {
     await deleteMember(member.email)
     toast({ title: 'Membre supprime', copy: `${member.name} a ete retire de la liste.` })
   }
-  const resetMemberPassword = async (email, password) => {
+  const handleResetMemberPassword = async (email, password) => {
     const cleanPassword = password.trim()
-    if (cleanPassword.length < 4) {
-      toast({ title: 'Mot de passe trop court', copy: 'Choisis au moins 4 caracteres pour le mot de passe temporaire.' })
+    if (cleanPassword.length < 8) {
+      toast({ title: 'Mot de passe trop court', copy: 'Choisis au moins 8 caracteres pour le mot de passe temporaire.' })
       return false
     }
-    await updateMember(email, { password: cleanPassword, passwordUpdatedAt: new Date().toLocaleDateString('fr-FR') })
-    toast({ title: 'Mot de passe reinitialise', copy: `Le mot de passe temporaire est pret pour ${email}.` })
+    await resetMemberPassword(email, cleanPassword)
+    toast({ title: 'Mot de passe reinitialise', copy: `${email} pourra se connecter avec ce mot de passe temporaire.` })
     return true
   }
   const submitNewMember = async (event) => {
@@ -65,10 +66,11 @@ export function Admin() {
     const name = String(data.get('name') || '').trim()
     const email = String(data.get('email') || '').trim()
     if (!name || !email) return
-    await createMember({ name, email: email.toLowerCase(), role: 'Membre', points: 0, status: 'Invite' })
+    const temporaryPassword = 'EgcTemp12345'
+    await createMember({ name, email: email.toLowerCase(), role: 'Membre', points: 0, status: 'Invite', password: temporaryPassword })
     event.currentTarget.reset()
     setNewMemberOpen(false)
-    toast({ title: 'Membre cree', copy: `Les identifiants temporaires de ${name} sont prets a etre transmis.` })
+    toast({ title: 'Membre cree', copy: `Mot de passe temporaire de ${name}: ${temporaryPassword}` })
   }
   const addWordToBank = async () => {
     const word = wordInput.trim().toUpperCase()
@@ -85,7 +87,7 @@ export function Admin() {
         <aside className="admin-sidebar"><div className="admin-brand"><span>EGC</span><i>G</i><button onClick={() => setCollapsed((value) => !value)} title={collapsed ? 'Afficher le menu' : 'Reduire le menu'}>{collapsed ? '>' : '<'}</button></div><Pill tone="gold">ADMIN</Pill><nav>{adminTabs.map((item) => <button key={item.id} onClick={() => setActive(item.id)} className={active === item.id ? 'active' : ''}><b>{item.icon}</b><span>{item.label}</span></button>)}</nav><div className="sidebar-footer"><span className="pulse-dot" /> Systeme operationnel</div></aside>
         <div className="admin-content"><div className="admin-top"><div><p className="eyebrow">{adminTabs.find((item) => item.id === active)?.label}</p><h2>{active === 'overview' ? 'Tableau de bord' : adminTabs.find((item) => item.id === active)?.label}</h2><p>Juillet 2026 - Donnees de demonstration interactives</p></div><div className="admin-actions"><button className={`motion-control ${motion === 'boost' ? 'active' : ''}`} onClick={() => setMotion(motion === 'boost' ? 'soft' : 'boost')}>{motion === 'boost' ? '* Effets boostes' : 'o Effets doux'}</button><Button onClick={() => setNewMemberOpen(true)}>Creer un membre</Button></div></div>
           {active === 'overview' && <Overview setActive={setActive} events={events} tournaments={tournaments} />}
-          {active === 'members' && <Members rows={filteredMembers} query={query} setQuery={setQuery} onRemove={removeMember} onPasswordReset={resetMemberPassword} />}
+          {active === 'members' && <Members rows={filteredMembers} query={query} setQuery={setQuery} onRemove={removeMember} onPasswordReset={handleResetMemberPassword} />}
           {active === 'wordle' && <WordleAdmin words={wordBank} wordInput={wordInput} setWordInput={setWordInput} addWord={addWordToBank} removeWord={removeWord} />}
           {active === 'events' && <EventsAdmin rows={events} createEvent={createEvent} updateEvent={updateEvent} deleteEvent={deleteEvent} openEventSignup={openEventSignup} toast={toast} />}
           {active === 'tournaments' && <TournamentsAdmin tournaments={tournaments} createTournament={createTournament} updateTournament={updateTournament} deleteTournament={deleteTournament} toast={toast} />}

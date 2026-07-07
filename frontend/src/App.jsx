@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { SuccessOverlay } from './components/shared/SuccessOverlay.jsx'
 import { Button } from './components/ui/Button.jsx'
 import { Modal } from './components/ui/Modal.jsx'
@@ -39,10 +39,25 @@ function AppContent() {
    * @param {import('./types/domain.js').PageId} target
    */
   const go = (target) => {
+    if (user?.mustChangePassword && target !== 'account') {
+      setPage('account')
+      setNavOpen(false)
+      toast({ title: 'Changement requis', copy: 'Change ton mot de passe temporaire avant de continuer.' })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
     setPage(target)
     setNavOpen(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+
+  useEffect(() => {
+    if (user?.mustChangePassword) {
+      setPage('account')
+      setNavOpen(false)
+    }
+  }, [user?.mustChangePassword])
 
   /**
    * @param {import('./types/domain.js').EventItem} event
@@ -61,7 +76,7 @@ function AppContent() {
    * @param {import('./types/domain.js').AuthUser} profile
    */
   const handleLoggedIn = (profile) => {
-    setPage(profile.role === 'Admin' ? 'admin' : 'home')
+    setPage(profile.mustChangePassword ? 'account' : profile.role === 'Admin' ? 'admin' : 'home')
   }
 
   const visibleNavItems = user?.role === 'Admin' ? navItems : navItems.filter((item) => item.id !== 'admin')

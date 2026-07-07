@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import { MemberStatus } from '@prisma/client'
 import * as bcrypt from 'bcrypt'
 import { PrismaService } from '../../database/prisma.service'
 import { ChangePasswordDto } from './dto/change-password.dto'
@@ -70,7 +71,11 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(dto.newPassword, PASSWORD_HASH_ROUNDS)
     const updatedUser = await this.prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash, mustChangePassword: false },
+      data: {
+        passwordHash,
+        mustChangePassword: false,
+        status: MemberStatus.ACTIVE,
+      },
       select: {
         id: true,
         name: true,
