@@ -15,6 +15,7 @@ export default [
         fetch: 'readonly',
         FileReader: 'readonly',
         FormData: 'readonly',
+        setTimeout: 'readonly',
         window: 'readonly',
       },
     },

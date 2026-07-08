@@ -1,19 +1,31 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1'
 
 /**
+ * @param {unknown} value
+ * @returns {value is Record<string, unknown>}
+ */
+function isRecord(value) {
+  return typeof value === 'object' && value !== null
+}
+
+/**
  * @param {unknown} payload
  * @returns {string}
  */
 function getErrorMessage(payload) {
-  if (typeof payload?.error === 'string') {
+  if (!isRecord(payload)) {
+    return 'Une erreur est survenue.'
+  }
+
+  if (typeof payload.error === 'string') {
     return payload.error
   }
 
-  if (Array.isArray(payload?.message)) {
+  if (Array.isArray(payload.message)) {
     return payload.message.join(' ')
   }
 
-  if (typeof payload?.message === 'string') {
+  if (typeof payload.message === 'string') {
     return payload.message
   }
 
@@ -48,9 +60,9 @@ export async function apiRequest(path, options = {}) {
   })
 
   const payload = await response.json().catch(() => null)
-  if (!response.ok || payload?.ok === false) {
+  if (!response.ok || (isRecord(payload) && payload.ok === false)) {
     throw new Error(getErrorMessage(payload))
   }
 
-  return payload?.data ?? payload
+  return isRecord(payload) && 'data' in payload ? /** @type {T} */ (payload.data) : /** @type {T} */ (payload)
 }
