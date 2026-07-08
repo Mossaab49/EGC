@@ -27,3 +27,35 @@ npm run start:dev
 ```
 
 L'API sera exposee par defaut sur `http://localhost:4000/api/v1`.
+
+## Deploiement
+
+Variables d'environnement obligatoires sur l'hebergeur :
+
+- `NODE_ENV=production`
+- `PORT`
+- `API_PREFIX`
+- `FRONTEND_URL`
+- `DATABASE_URL`
+- `JWT_SECRET` avec une valeur forte de 32 caracteres minimum
+- `JWT_EXPIRES_IN`
+
+Avant le premier demarrage en production, appliquer les migrations Prisma :
+
+```bash
+npx prisma migrate deploy
+```
+
+Build de production :
+
+```bash
+npm run build
+```
+
+Demarrage production :
+
+```bash
+npm run start:prod
+```
+
+Ne pas utiliser de wildcard CORS en production. `FRONTEND_URL` doit correspondre a l'origine exacte du frontend public.
