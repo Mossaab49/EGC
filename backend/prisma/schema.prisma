@@ -106,10 +106,13 @@ model WordleAttempt {
   userId    String   @db.Uuid
   guess     String
   answer    String
+  puzzleKey String   @default("legacy")
   isCorrect Boolean
   points    Int      @default(0)
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, puzzleKey])
 }
 
 model MinecraftRequest {
@@ -122,3 +125,4 @@ model MinecraftRequest {
   updatedAt DateTime               @updatedAt
   user      User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
+

@@ -145,13 +145,22 @@ export function AppDataProvider({ children }) {
   }, [])
 
   const getTodayWord = useCallback(async () => {
-    const { data } = await wordleService.getTodayWord()
+    const { data } = await wordleService.getTodayWord(token || undefined)
     return data
-  }, [])
+  }, [token])
+
+  const loadWordleProgress = useCallback(async () => {
+    if (!token) {
+      throw new Error('Session expiree. Reconnecte-toi.')
+    }
+    const { data } = await wordleService.getProgress(token)
+    return data
+  }, [token])
+
   const submitWordleGuess = useCallback(async (guess, answer) => {
-    const { data } = await wordleService.submitGuess(guess, answer)
+    const { data } = await wordleService.submitGuess(guess, answer, token || undefined)
     return data
-  }, [])
+  }, [token])
   const loadEnglishGuessWords = useCallback(() => loadEnglishDictionary(), [])
 
   const submitMinecraftParticipationRequest = useCallback(async (request) => {
@@ -189,6 +198,7 @@ export function AppDataProvider({ children }) {
     addWord,
     removeWord,
     getTodayWord,
+    loadWordleProgress,
     submitWordleGuess,
     loadEnglishGuessWords,
     minecraftRequests,
@@ -207,6 +217,7 @@ export function AppDataProvider({ children }) {
     events,
     getTodayWord,
     isLoading,
+    loadWordleProgress,
     loadEnglishGuessWords,
     members,
     minecraftRequests,
@@ -238,3 +249,4 @@ export function useAppData() {
   }
   return context
 }
+

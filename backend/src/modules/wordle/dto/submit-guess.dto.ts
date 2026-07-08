@@ -4,8 +4,4 @@ export class SubmitGuessDto {
   @MinLength(3)
   @Matches(/^[a-zA-Z]+$/)
   guess: string
-
-  @MinLength(3)
-  @Matches(/^[a-zA-Z]+$/)
-  answer: string
 }

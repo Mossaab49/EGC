@@ -1,5 +1,32 @@
 export const fallbackEnglishGuessWords = ['GAME', 'GAMES', 'MATCH', 'ROUND', 'SCORE', 'PLAYER', 'SERVER', 'STREAM']
 
+/**
+ * @param {Date=} date
+ * @returns {string}
+ */
+export function getDailyWordKey(date = new Date()) {
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+}
+
+/**
+ * Picks one stable Wordle answer for the current local calendar day.
+ *
+ * @param {string[]} words
+ * @param {Date=} date
+ * @returns {string}
+ */
+export function getDailyWord(words, date = new Date()) {
+  const playableWords = words.filter((word) => word.length >= 3)
+  if (!playableWords.length) return 'ARENA'
+
+  const dateKey = getDailyWordKey(date)
+  const hash = Array.from(dateKey).reduce((total, character) => (
+    (total * 31 + character.charCodeAt(0)) >>> 0
+  ), 0)
+
+  return playableWords[hash % playableWords.length]
+}
+
 export function parseWordList(text) {
   return text
     .split(/\s+/)

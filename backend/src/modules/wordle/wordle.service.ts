@@ -1,39 +1,174 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common'
+import { WordleAttempt } from '@prisma/client'
+import { PrismaService } from '../../database/prisma.service'
 import { AddWordDto } from './dto/add-word.dto'
 import { SubmitGuessDto } from './dto/submit-guess.dto'
 
-const words = ['ARENA', 'PIXEL', 'SQUAD', 'GAMER', 'CLASH', 'LEVEL']
+const FALLBACK_WORDS = ['ARENA', 'PIXEL', 'SQUAD', 'GAMER', 'CLASH', 'LEVEL']
+const MAX_ATTEMPTS = 6
+const WIN_POINTS = 5
+
+type LetterStatus = 'correct' | 'present' | 'absent'
+
+type WordleAttemptResponse = {
+  guess: string
+  answer: string
+  statuses: LetterStatus[]
+  isCorrect: boolean
+  points: number
+  createdAt: Date
+}
+
+type WordleProgressResponse = {
+  puzzleKey: string
+  answer: string
+  attempts: WordleAttemptResponse[]
+  isWon: boolean
+  isLost: boolean
+  remainingAttempts: number
+}
 
 @Injectable()
 export class WordleService {
-  async getWords() {
-    return words
+  constructor(private readonly prisma: PrismaService) {}
+
+  async getWords(): Promise<string[]> {
+    return this.getWordBank()
   }
 
-  async getTodayWord() {
-    return words[0]
+  async getTodayWord(): Promise<string> {
+    const puzzle = await this.getTodayPuzzle()
+    return puzzle.answer
   }
 
-  async addWord(dto: AddWordDto) {
+  async getProgress(userId: string): Promise<WordleProgressResponse> {
+    const puzzle = await this.getTodayPuzzle()
+    const attempts = await this.findAttempts(userId, puzzle.puzzleKey)
+    return this.toProgress(puzzle.puzzleKey, puzzle.answer, attempts)
+  }
+
+  async addWord(dto: AddWordDto): Promise<string[]> {
     const cleanWord = dto.word.trim().toUpperCase()
-    if (!words.includes(cleanWord)) words.push(cleanWord)
-    return words
+    await this.prisma.word.upsert({
+      where: { value: cleanWord },
+      update: { isActive: true },
+      create: { value: cleanWord, isActive: true },
+    })
+    return this.getWordBank()
   }
 
-  async submitGuess(dto: SubmitGuessDto) {
+  async submitGuess(userId: string, dto: SubmitGuessDto): Promise<WordleProgressResponse> {
+    const puzzle = await this.getTodayPuzzle()
     const guess = dto.guess.trim().toUpperCase()
-    const answer = dto.answer.trim().toUpperCase()
+
+    if (guess.length !== puzzle.answer.length) {
+      throw new BadRequestException(`Le mot doit contenir ${puzzle.answer.length} lettres.`)
+    }
+
+    const attempts = await this.findAttempts(userId, puzzle.puzzleKey)
+    if (attempts.some((attempt) => attempt.guess === guess)) {
+      throw new ConflictException('Mot deja essaye.')
+    }
+    if (attempts.some((attempt) => attempt.isCorrect)) {
+      throw new ConflictException('Le mot du jour est deja trouve.')
+    }
+    if (attempts.length >= MAX_ATTEMPTS) {
+      throw new ConflictException('Tu as utilise tes 6 essais du jour.')
+    }
+
+    const isCorrect = guess === puzzle.answer
+    const points = isCorrect ? WIN_POINTS : 0
+
+    const nextAttempts = await this.prisma.$transaction(async (tx) => {
+      await tx.wordleAttempt.create({
+        data: {
+          userId,
+          guess,
+          answer: puzzle.answer,
+          puzzleKey: puzzle.puzzleKey,
+          isCorrect,
+          points,
+        },
+      })
+
+      if (points > 0) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { points: { increment: points } },
+        })
+      }
+
+      return tx.wordleAttempt.findMany({
+        where: { userId, puzzleKey: puzzle.puzzleKey },
+        orderBy: { createdAt: 'asc' },
+      })
+    })
+
+    return this.toProgress(puzzle.puzzleKey, puzzle.answer, nextAttempts)
+  }
+
+  private async getWordBank(): Promise<string[]> {
+    const rows = await this.prisma.word.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    const words = rows.map((row) => row.value.trim().toUpperCase()).filter((word) => word.length >= 3)
+    return words.length ? words : FALLBACK_WORDS
+  }
+
+  private async getTodayPuzzle(): Promise<{ puzzleKey: string; answer: string }> {
+    const words = await this.getWordBank()
+    const puzzleKey = getDailyWordKey()
+    const hash = Array.from(puzzleKey).reduce((total, character) => (
+      (total * 31 + character.charCodeAt(0)) >>> 0
+    ), 0)
+
     return {
-      guess,
+      puzzleKey,
+      answer: words[hash % words.length],
+    }
+  }
+
+  private findAttempts(userId: string, puzzleKey: string): Promise<WordleAttempt[]> {
+    return this.prisma.wordleAttempt.findMany({
+      where: { userId, puzzleKey },
+      orderBy: { createdAt: 'asc' },
+    })
+  }
+
+  private toProgress(puzzleKey: string, answer: string, attempts: WordleAttempt[]): WordleProgressResponse {
+    const mappedAttempts = attempts.map((attempt) => this.toAttemptResponse(attempt, answer))
+    const isWon = mappedAttempts.some((attempt) => attempt.isCorrect)
+    const isLost = mappedAttempts.length >= MAX_ATTEMPTS && !isWon
+
+    return {
+      puzzleKey,
       answer,
-      statuses: scoreGuess(guess, answer),
-      isCorrect: guess === answer,
+      attempts: mappedAttempts,
+      isWon,
+      isLost,
+      remainingAttempts: Math.max(0, MAX_ATTEMPTS - mappedAttempts.length),
+    }
+  }
+
+  private toAttemptResponse(attempt: WordleAttempt, answer: string): WordleAttemptResponse {
+    return {
+      guess: attempt.guess,
+      answer,
+      statuses: scoreGuess(attempt.guess, answer),
+      isCorrect: attempt.isCorrect,
+      points: attempt.points,
+      createdAt: attempt.createdAt,
     }
   }
 }
 
-function scoreGuess(guess: string, answer: string) {
-  const result = Array.from({ length: answer.length }, () => 'absent')
+function getDailyWordKey(date = new Date()): string {
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+}
+
+function scoreGuess(guess: string, answer: string): LetterStatus[] {
+  const result: LetterStatus[] = Array.from({ length: answer.length }, () => 'absent')
   const remaining: Record<string, number> = {}
 
   for (let index = 0; index < answer.length; index += 1) {
@@ -55,3 +190,4 @@ function scoreGuess(guess: string, answer: string) {
 
   return result
 }
+
