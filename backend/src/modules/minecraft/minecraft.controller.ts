@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 import { CreateMinecraftRequestDto } from './dto/create-minecraft-request.dto'
 import { UpdateMinecraftRequestStatusDto } from './dto/update-minecraft-request-status.dto'
 import { MinecraftService } from './minecraft.service'
@@ -12,6 +13,7 @@ export class MinecraftController {
     return this.minecraftService.findAll()
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('requests')
   create(@Body() dto: CreateMinecraftRequestDto) {
     return this.minecraftService.create(dto)

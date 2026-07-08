@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { MemberStatus } from '@prisma/client'
 import * as bcrypt from 'bcrypt'
@@ -11,6 +11,8 @@ const PASSWORD_HASH_ROUNDS = 10
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name)
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -21,8 +23,9 @@ export class AuthService {
    * generic 401 prevents account enumeration through the login endpoint.
    */
   async login(dto: LoginDto): Promise<AuthResponse> {
+    const email = dto.email.toLowerCase()
     const user = await this.prisma.user.findUnique({
-      where: { email: dto.email.toLowerCase() },
+      where: { email },
       select: {
         id: true,
         name: true,
@@ -37,6 +40,7 @@ export class AuthService {
       : false
 
     if (!user || !isPasswordValid) {
+      this.logger.warn(`Failed login attempt for email=${email}`)
       throw new UnauthorizedException('Invalid credentials')
     }
 
