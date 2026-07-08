@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common'
+import { Logger, ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import { json, urlencoded } from 'express'
@@ -9,16 +9,21 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false })
+  const logger = new Logger('Bootstrap')
   const config = app.get(ConfigService)
-  const apiPrefix = config.get<string>('API_PREFIX', 'api/v1')
-  const corsOrigin = config.get<string>('CORS_ORIGIN', 'http://localhost:5173')
-  const port = config.get<number>('PORT', 4000)
+  const nodeEnv = config.get<string>('app.env', 'development')
+  const apiPrefix = config.get<string>('app.apiPrefix', 'api/v1')
+  const frontendUrl = config.get<string>('app.frontendUrl', 'http://localhost:5173')
+  const port = config.get<number>('app.port', 4000)
+  const corsOrigin = nodeEnv === 'production'
+    ? frontendUrl
+    : [frontendUrl, 'http://localhost:5173', 'http://127.0.0.1:5173']
 
-  app.setGlobalPrefix(apiPrefix)
+  app.use(helmet())
   app.use(json({ limit: '10mb' }))
   app.use(urlencoded({ extended: true, limit: '10mb' }))
   app.enableCors({ origin: corsOrigin, credentials: true })
-  app.use(helmet())
+  app.setGlobalPrefix(apiPrefix)
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -26,10 +31,11 @@ async function bootstrap() {
       transform: true,
     }),
   )
-  app.useGlobalFilters(new HttpExceptionFilter())
+  app.useGlobalFilters(new HttpExceptionFilter(nodeEnv))
   app.useGlobalInterceptors(new ResponseInterceptor())
 
   await app.listen(port)
+  logger.log(`EGC API started on port ${port} in ${nodeEnv} mode`)
 }
 
 void bootstrap()
