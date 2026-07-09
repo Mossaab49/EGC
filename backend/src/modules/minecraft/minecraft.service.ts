@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { MinecraftRequest, MinecraftRequestStatus } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { CreateMinecraftRequestDto } from './dto/create-minecraft-request.dto'
@@ -27,7 +27,7 @@ export class MinecraftService {
     return requests.map((request) => this.toResponse(request))
   }
 
-  async create(dto: CreateMinecraftRequestDto): Promise<MinecraftRequestResponse> {
+  async create(userId: string, dto: CreateMinecraftRequestDto): Promise<MinecraftRequestResponse> {
     const name = (dto.name || dto['pseudo-minecraft'] || '').trim()
     const launcher = (dto.launcher || dto['launcher-utilise'] || '').trim()
     if (name.length < 2 || launcher.length < 2) {
@@ -35,7 +35,7 @@ export class MinecraftService {
     }
     const existingPendingRequest = await this.prisma.minecraftRequest.findFirst({
       where: {
-        name: { equals: name, mode: 'insensitive' },
+        userId,
         status: MinecraftRequestStatus.PENDING,
       },
     })
@@ -43,23 +43,49 @@ export class MinecraftService {
     const request = existingPendingRequest
       ? await this.prisma.minecraftRequest.update({
         where: { id: existingPendingRequest.id },
-        data: { launcher, status: MinecraftRequestStatus.PENDING },
+        data: { name, launcher, status: MinecraftRequestStatus.PENDING },
       })
       : await this.prisma.minecraftRequest.create({
-        data: { name, launcher, status: MinecraftRequestStatus.PENDING },
+        data: { userId, name, launcher, status: MinecraftRequestStatus.PENDING },
       })
 
     return this.toResponse(request)
   }
 
   async updateStatus(id: string, dto: UpdateMinecraftRequestStatusDto): Promise<MinecraftRequestResponse> {
-    await this.requireRequest(id)
-    const request = await this.prisma.minecraftRequest.update({
-      where: { id },
-      data: { status: this.toDbStatus(dto.status) },
-    })
+    const existingRequest = await this.requireRequest(id)
+    const status = this.toDbStatus(dto.status)
 
-    return this.toResponse(request)
+    if (status === MinecraftRequestStatus.ACCEPTED && !existingRequest.userId) {
+      throw new BadRequestException(
+        "Cette ancienne demande n'est associee a aucun utilisateur. Le membre doit la renvoyer.",
+      )
+    }
+
+    try {
+      const request = await this.prisma.$transaction(async (tx) => {
+        const updatedRequest = await tx.minecraftRequest.update({
+          where: { id },
+          data: { status },
+        })
+
+        if (status === MinecraftRequestStatus.ACCEPTED && existingRequest.userId) {
+          await tx.user.update({
+            where: { id: existingRequest.userId },
+            data: { minecraftName: existingRequest.name },
+          })
+        }
+
+        return updatedRequest
+      })
+
+      return this.toResponse(request)
+    } catch (error) {
+      if (this.isUniqueConstraintError(error)) {
+        throw new ConflictException('Ce pseudo Minecraft est deja associe a un autre membre.')
+      }
+      throw error
+    }
   }
 
   async deleteTreated(): Promise<{ deleted: number }> {
@@ -97,5 +123,10 @@ export class MinecraftService {
     if (status === 'Acceptee') return MinecraftRequestStatus.ACCEPTED
     if (status === 'Refusee') return MinecraftRequestStatus.REJECTED
     return MinecraftRequestStatus.PENDING
+  }
+
+  private isUniqueConstraintError(error: unknown): boolean {
+    if (typeof error !== 'object' || error === null || !('code' in error)) return false
+    return (error as { code?: unknown }).code === 'P2002'
   }
 }

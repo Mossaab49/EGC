@@ -9,11 +9,15 @@ const cloneRequest = (request) => ({ ...request })
 
 /**
  * @param {Omit<import('../types/domain.js').MinecraftRequest, 'id' | 'status' | 'createdAt' | 'updatedAt'>} request
+ * @param {string | null=} token
  * @returns {Promise<import('../types/domain.js').ApiResponse<import('../types/domain.js').MinecraftRequest>>}
  */
-export async function submitParticipationRequest(request) {
+export async function submitParticipationRequest(request, token = null) {
+  if (!token) throw new Error('Connecte-toi pour envoyer une demande Minecraft.')
+
   const createdRequest = await apiRequest('/minecraft/requests', {
     method: 'POST',
+    token,
     body: request,
   })
 

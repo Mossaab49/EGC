@@ -173,10 +173,10 @@ export function AppDataProvider({ children }) {
   const loadEnglishGuessWords = useCallback(() => loadEnglishDictionary(), [])
 
   const submitMinecraftParticipationRequest = useCallback(async (request) => {
-    const { data: createdRequest } = await minecraftService.submitParticipationRequest(request)
+    const { data: createdRequest } = await minecraftService.submitParticipationRequest(request, token)
     setMinecraftRequests((items) => [...items.filter((item) => item.id !== createdRequest.id && item.name.toLowerCase() !== createdRequest.name.toLowerCase()), createdRequest])
     return createdRequest
-  }, [])
+  }, [token])
 
   const updateMinecraftRequestStatus = useCallback(async (id, status) => {
     const { data: updatedRequest } = await minecraftService.updateRequestStatus(id, status, token)
