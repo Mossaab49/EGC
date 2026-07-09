@@ -38,11 +38,13 @@ export class WordleService {
 
   async getTodayWord(): Promise<string> {
     const puzzle = await this.getTodayPuzzle()
+    await this.cleanupExpiredAttempts(puzzle.puzzleKey)
     return puzzle.answer
   }
 
   async getProgress(userId: string): Promise<WordleProgressResponse> {
     const puzzle = await this.getTodayPuzzle()
+    await this.cleanupExpiredAttempts(puzzle.puzzleKey)
     const attempts = await this.findAttempts(userId, puzzle.puzzleKey)
     return this.toProgress(puzzle.puzzleKey, puzzle.answer, attempts)
   }
@@ -59,6 +61,7 @@ export class WordleService {
 
   async submitGuess(userId: string, dto: SubmitGuessDto): Promise<WordleProgressResponse> {
     const puzzle = await this.getTodayPuzzle()
+    await this.cleanupExpiredAttempts(puzzle.puzzleKey)
     const guess = dto.guess.trim().toUpperCase()
 
     if (guess.length !== puzzle.answer.length) {
@@ -80,7 +83,7 @@ export class WordleService {
     const points = isCorrect ? WIN_POINTS : 0
 
     const nextAttempts = await this.prisma.$transaction(async (tx) => {
-      await tx.wordleAttempt.create({
+      const createdAttempt = await tx.wordleAttempt.create({
         data: {
           userId,
           guess,
@@ -95,6 +98,15 @@ export class WordleService {
         await tx.user.update({
           where: { id: userId },
           data: { points: { increment: points } },
+        })
+        await tx.pointTransaction.create({
+          data: {
+            userId,
+            points,
+            source: 'WORDLE',
+            reason: 'Mot Wordle trouve',
+            referenceId: createdAttempt.id,
+          },
         })
       }
 
@@ -127,6 +139,17 @@ export class WordleService {
       puzzleKey,
       answer: words[hash % words.length],
     }
+  }
+
+  private cleanupExpiredAttempts(currentPuzzleKey: string): Promise<{ count: number }> {
+    return this.prisma.wordleAttempt.deleteMany({
+      where: {
+        OR: [
+          { puzzleKey: { not: currentPuzzleKey } },
+          { createdAt: { lt: getStartOfToday() } },
+        ],
+      },
+    })
   }
 
   private findAttempts(userId: string, puzzleKey: string): Promise<WordleAttempt[]> {
@@ -167,6 +190,12 @@ function getDailyWordKey(date = new Date()): string {
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
 }
 
+function getStartOfToday(date = new Date()): Date {
+  const start = new Date(date)
+  start.setHours(0, 0, 0, 0)
+  return start
+}
+
 function scoreGuess(guess: string, answer: string): LetterStatus[] {
   const result: LetterStatus[] = Array.from({ length: answer.length }, () => 'absent')
   const remaining: Record<string, number> = {}
@@ -190,4 +219,3 @@ function scoreGuess(guess: string, answer: string): LetterStatus[] {
 
   return result
 }
-

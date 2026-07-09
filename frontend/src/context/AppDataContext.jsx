@@ -11,7 +11,7 @@ import * as wordleService from '../services/wordle-service.js'
 const AppDataContext = createContext(null)
 
 export function AppDataProvider({ children }) {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const [members, setMembers] = useState([])
   const [events, setEvents] = useState([])
   const [tournaments, setTournaments] = useState([])
@@ -29,7 +29,7 @@ export function AppDataProvider({ children }) {
         eventsService.getEvents(),
         tournamentsService.getTournaments(token),
         wordleService.getWordBank(),
-        minecraftService.getRequests(),
+        user?.role === 'Admin' ? minecraftService.getRequests(token) : Promise.resolve({ ok: true, data: [], error: null }),
         rankingService.getRankings(),
       ])
 
@@ -45,7 +45,7 @@ export function AppDataProvider({ children }) {
 
     loadInitialData()
     return () => { cancelled = true }
-  }, [token])
+  }, [token, user?.role])
 
   const createMember = useCallback(async (member) => {
     const { data: createdMember } = await membersService.createMember(member, token)
@@ -144,6 +144,12 @@ export function AppDataProvider({ children }) {
     return nextWordBank
   }, [])
 
+  const refreshRankings = useCallback(async () => {
+    const { data: nextRankings } = await rankingService.getRankings()
+    setRankings(nextRankings)
+    return nextRankings
+  }, [])
+
   const getTodayWord = useCallback(async () => {
     const { data } = await wordleService.getTodayWord(token || undefined)
     return data
@@ -159,22 +165,31 @@ export function AppDataProvider({ children }) {
 
   const submitWordleGuess = useCallback(async (guess, answer) => {
     const { data } = await wordleService.submitGuess(guess, answer, token || undefined)
+    if (data?.isCorrect) {
+      await refreshRankings()
+    }
     return data
-  }, [token])
+  }, [refreshRankings, token])
   const loadEnglishGuessWords = useCallback(() => loadEnglishDictionary(), [])
 
   const submitMinecraftParticipationRequest = useCallback(async (request) => {
     const { data: createdRequest } = await minecraftService.submitParticipationRequest(request)
-    setMinecraftRequests((items) => [...items.filter((item) => item.name !== createdRequest.name), createdRequest])
+    setMinecraftRequests((items) => [...items.filter((item) => item.id !== createdRequest.id && item.name.toLowerCase() !== createdRequest.name.toLowerCase()), createdRequest])
     return createdRequest
   }, [])
 
-  const updateMinecraftRequestStatus = useCallback(async (name, status) => {
-    const { data: updatedRequest } = await minecraftService.updateRequestStatus(name, status)
+  const updateMinecraftRequestStatus = useCallback(async (id, status) => {
+    const { data: updatedRequest } = await minecraftService.updateRequestStatus(id, status, token)
     if (!updatedRequest) return null
-    setMinecraftRequests((items) => items.map((item) => item.name === name ? updatedRequest : item))
+    setMinecraftRequests((items) => items.map((item) => item.id === id ? updatedRequest : item))
     return updatedRequest
-  }, [])
+  }, [token])
+
+  const deleteTreatedMinecraftRequests = useCallback(async () => {
+    const { data: deletedCount } = await minecraftService.deleteTreatedRequests(token)
+    setMinecraftRequests((items) => items.filter((item) => item.status === 'En attente'))
+    return deletedCount
+  }, [token])
 
   const value = useMemo(() => ({
     isLoading,
@@ -204,7 +219,9 @@ export function AppDataProvider({ children }) {
     minecraftRequests,
     submitMinecraftParticipationRequest,
     updateMinecraftRequestStatus,
+    deleteTreatedMinecraftRequests,
     rankings,
+    refreshRankings,
   }), [
     addWord,
     cancelRegistration,
@@ -214,6 +231,7 @@ export function AppDataProvider({ children }) {
     deleteEvent,
     deleteMember,
     deleteTournament,
+    deleteTreatedMinecraftRequests,
     events,
     getTodayWord,
     isLoading,
@@ -225,6 +243,7 @@ export function AppDataProvider({ children }) {
     registerToTournament,
     removeWord,
     rankings,
+    refreshRankings,
     submitMinecraftParticipationRequest,
     submitWordleGuess,
     tournaments,

@@ -81,9 +81,12 @@
 
 /**
  * @typedef {object} MinecraftRequest
+ * @property {string=} id
  * @property {string} name
  * @property {string} launcher
  * @property {RequestStatus} status
+ * @property {string=} createdAt
+ * @property {string=} updatedAt
  */
 
 /**
@@ -167,8 +170,10 @@
  * @property {() => Promise<string[]>} loadEnglishGuessWords
  * @property {MinecraftRequest[]} minecraftRequests
  * @property {(request: Omit<MinecraftRequest, 'status'>) => Promise<MinecraftRequest>} submitMinecraftParticipationRequest
- * @property {(name: string, status: RequestStatus) => Promise<MinecraftRequest | null>} updateMinecraftRequestStatus
+ * @property {(id: string, status: RequestStatus) => Promise<MinecraftRequest | null>} updateMinecraftRequestStatus
+ * @property {() => Promise<number>} deleteTreatedMinecraftRequests
  * @property {Rankings} rankings
+ * @property {() => Promise<Rankings>} refreshRankings
  */
 
 /**

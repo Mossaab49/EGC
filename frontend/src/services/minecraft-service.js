@@ -1,7 +1,5 @@
-import { initialMinecraftRequests } from '../lib/mock-data/index.js'
+import { apiRequest } from './api-client.js'
 import { successResponse } from './service-response.js'
-
-let requests = initialMinecraftRequests.map((request) => ({ ...request }))
 
 /**
  * @param {import('../types/domain.js').MinecraftRequest} request
@@ -9,37 +7,59 @@ let requests = initialMinecraftRequests.map((request) => ({ ...request }))
  */
 const cloneRequest = (request) => ({ ...request })
 
-const cloneRequests = () => requests.map((request) => ({ ...request }))
-
 /**
- * @param {Omit<import('../types/domain.js').MinecraftRequest, 'status'>} request
+ * @param {Omit<import('../types/domain.js').MinecraftRequest, 'id' | 'status' | 'createdAt' | 'updatedAt'>} request
  * @returns {Promise<import('../types/domain.js').ApiResponse<import('../types/domain.js').MinecraftRequest>>}
  */
 export async function submitParticipationRequest(request) {
-  const createdRequest = /** @type {import('../types/domain.js').MinecraftRequest} */ ({ ...request, status: 'En attente' })
-  requests = [...requests.filter((item) => item.name !== createdRequest.name), createdRequest]
-  return Promise.resolve(successResponse(cloneRequest(createdRequest)))
+  const createdRequest = await apiRequest('/minecraft/requests', {
+    method: 'POST',
+    body: request,
+  })
+
+  return successResponse(cloneRequest(createdRequest))
 }
 
 /**
+ * @param {string | null=} token
  * @returns {Promise<import('../types/domain.js').ApiResponse<import('../types/domain.js').MinecraftRequest[]>>}
  */
-export async function getRequests() {
-  return Promise.resolve(successResponse(cloneRequests()))
+export async function getRequests(token = null) {
+  if (!token) return successResponse([])
+
+  const requests = await apiRequest('/minecraft/requests', { token })
+  return successResponse(requests.map(cloneRequest))
 }
 
 /**
- * @param {string} name
+ * @param {string} id
  * @param {import('../types/domain.js').RequestStatus} status
+ * @param {string | null=} token
  * @returns {Promise<import('../types/domain.js').ApiResponse<import('../types/domain.js').MinecraftRequest | null>>}
  */
-export async function updateRequestStatus(name, status) {
-  /** @type {import('../types/domain.js').MinecraftRequest | null} */
-  let updatedRequest = null
-  requests = requests.map((request) => {
-    if (request.name !== name) return request
-    updatedRequest = { ...request, status }
-    return updatedRequest
+export async function updateRequestStatus(id, status, token = null) {
+  if (!token) throw new Error('Session admin expiree. Reconnecte-toi.')
+
+  const updatedRequest = await apiRequest(`/minecraft/requests/${id}/status`, {
+    method: 'PATCH',
+    token,
+    body: { status },
   })
-  return Promise.resolve(successResponse(updatedRequest ? cloneRequest(updatedRequest) : null))
+
+  return successResponse(cloneRequest(updatedRequest))
+}
+
+/**
+ * @param {string | null=} token
+ * @returns {Promise<import('../types/domain.js').ApiResponse<number>>}
+ */
+export async function deleteTreatedRequests(token = null) {
+  if (!token) throw new Error('Session admin expiree. Reconnecte-toi.')
+
+  const result = await apiRequest('/minecraft/requests/treated', {
+    method: 'DELETE',
+    token,
+  })
+
+  return successResponse(result.deleted || 0)
 }

@@ -1,4 +1,4 @@
-import { players, weeklyPlayers } from '../lib/mock-data/index.js'
+import { apiRequest } from './api-client.js'
 import { successResponse } from './service-response.js'
 
 /**
@@ -8,13 +8,24 @@ import { successResponse } from './service-response.js'
 const cloneRankingRow = (row) => [...row]
 
 /**
- * Returns the current monthly and weekly ranking rows.
+ * @param {import('../types/domain.js').RankingPeriod} period
+ * @returns {Promise<import('../types/domain.js').RankingRow[]>}
+ */
+async function getRanking(period) {
+  const rows = await apiRequest(`/ranking?period=${period}`)
+  return rows.map(cloneRankingRow)
+}
+
+/**
+ * Returns the current monthly and weekly ranking rows from the backend.
  *
  * @returns {Promise<import('../types/domain.js').ApiResponse<import('../types/domain.js').Rankings>>}
  */
 export async function getRankings() {
-  return Promise.resolve(successResponse({
-    monthly: players.map(cloneRankingRow),
-    weekly: weeklyPlayers.map(cloneRankingRow),
-  }))
+  const [monthly, weekly] = await Promise.all([
+    getRanking('monthly'),
+    getRanking('weekly'),
+  ])
+
+  return successResponse({ monthly, weekly })
 }

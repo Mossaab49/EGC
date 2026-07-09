@@ -49,6 +49,7 @@ model User {
   tournamentEntries TournamentEntry[]
   wordleAttempts    WordleAttempt[]
   minecraftRequests MinecraftRequest[]
+  pointTransactions PointTransaction[]
 }
 
 model Event {
@@ -114,6 +115,20 @@ model WordleAttempt {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, puzzleKey])
+}
+
+model PointTransaction {
+  id          String   @id @default(cuid())
+  userId      String   @db.Uuid
+  points      Int
+  source      String
+  reason      String?
+  referenceId String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([source, referenceId])
 }
 
 model MinecraftRequest {

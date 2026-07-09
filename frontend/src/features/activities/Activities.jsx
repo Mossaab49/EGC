@@ -42,6 +42,7 @@ export function Activities({ go, showSuccess }) {
   const [tab, setTab] = useState('wordle')
   const [registered, setRegistered] = useState(false)
   const [minecraftSent, setMinecraftSent] = useState(false)
+  const [minecraftSubmitting, setMinecraftSubmitting] = useState(false)
   const activeTournament = tournaments.find((tournament) => tournament.status === 'Actif') || tournaments[0]
   const tournamentFallbackImage = makeGameImage('TOURNOI', '#7C3AED', '#11122c')
   const tournamentImage = activeTournament?.imageUrl || tournamentFallbackImage
@@ -63,7 +64,27 @@ export function Activities({ go, showSuccess }) {
         </div>}
         {tab === 'minecraft' && <div className="minecraft-layout fade-enter">
           <div className="minecraft-banner"><Pill tone="gold">OUVERT AUX MEMBRES</Pill><h2>EGC<br />MINECRAFT</h2><p>Survie - Creation - Evenements<br />Un monde construit ensemble.</p><small>Respect - entraide - fair-play</small></div>
-          <form className="panel minecraft-form" onSubmit={async (event) => { event.preventDefault(); const data = new FormData(event.currentTarget); await submitMinecraftParticipationRequest({ name: String(data.get('pseudo-minecraft') || '').trim(), launcher: String(data.get('launcher-utilise') || '').trim() }); setMinecraftSent(true); toast({ title: 'Demande envoyee', copy: 'Le responsable Minecraft recevra tes informations.' }) }}><h3>Demander une participation</h3><p>Ta demande sera transmise au responsable du serveur.</p><Field required label="Pseudo Minecraft" placeholder="ex. gamer_ensat" /><Field required label="Launcher utilise" placeholder="ex. TLauncher / officiel" /><label className="check"><input required type="checkbox" /> J'accepte les regles de conduite du serveur.</label><Button type="submit" variant={minecraftSent ? 'success' : 'primary'}>{minecraftSent ? 'OK Demande envoyee' : 'Envoyer la demande'}</Button></form>
+          <form className="panel minecraft-form" onSubmit={async (event) => {
+            event.preventDefault()
+            if (minecraftSubmitting) return
+            const data = new FormData(event.currentTarget)
+            const name = String(data.get('pseudo-minecraft') || '').trim()
+            const launcher = String(data.get('launcher-utilise') || '').trim()
+            if (!name || !launcher) {
+              toast({ title: 'Infos manquantes', copy: 'Ajoute ton pseudo Minecraft et ton launcher.' })
+              return
+            }
+            setMinecraftSubmitting(true)
+            try {
+              await submitMinecraftParticipationRequest({ name, launcher })
+              setMinecraftSent(true)
+              toast({ title: 'Demande envoyee', copy: 'Le responsable Minecraft recevra tes informations.' })
+            } catch (error) {
+              toast({ title: 'Demande non envoyee', copy: error instanceof Error ? error.message : 'Verifie que le backend est lance.' })
+            } finally {
+              setMinecraftSubmitting(false)
+            }
+          }}><h3>Demander une participation</h3><p>Ta demande sera transmise au responsable du serveur.</p><Field required name="pseudo-minecraft" label="Pseudo Minecraft" placeholder="ex. gamer_ensat" /><Field required name="launcher-utilise" label="Launcher utilise" placeholder="ex. TLauncher / officiel" /><label className="check"><input required type="checkbox" /> J'accepte les regles de conduite du serveur.</label><Button type="submit" disabled={minecraftSubmitting} variant={minecraftSent ? 'success' : 'primary'}>{minecraftSubmitting ? 'Envoi...' : minecraftSent ? 'OK Demande envoyee' : 'Envoyer la demande'}</Button></form>
         </div>}
       </div></section>
     </>

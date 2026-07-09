@@ -65,18 +65,33 @@ export class UsersService {
   }
 
   async update(id: string, dto: UpdateUserDto): Promise<UserResponse> {
-    await this.requireUser(id)
+    const existingUser = await this.requireUser(id)
 
     try {
-      const user = await this.prisma.user.update({
-        where: { id },
-        data: {
-          name: dto.name,
-          email: dto.email?.toLowerCase(),
-          role: dto.role ? this.toDbRole(dto.role) : undefined,
-          points: dto.points,
-          status: dto.status ? this.toDbStatus(dto.status) : undefined,
-        },
+      const user = await this.prisma.$transaction(async (tx) => {
+        const updatedUser = await tx.user.update({
+          where: { id },
+          data: {
+            name: dto.name,
+            email: dto.email?.toLowerCase(),
+            role: dto.role ? this.toDbRole(dto.role) : undefined,
+            points: dto.points,
+            status: dto.status ? this.toDbStatus(dto.status) : undefined,
+          },
+        })
+
+        if (dto.points !== undefined && dto.points !== existingUser.points) {
+          await tx.pointTransaction.create({
+            data: {
+              userId: id,
+              points: dto.points - existingUser.points,
+              source: 'ADMIN_ADJUSTMENT',
+              reason: 'Modification admin du total de points',
+            },
+          })
+        }
+
+        return updatedUser
       })
 
       return this.toUserResponse(user)
