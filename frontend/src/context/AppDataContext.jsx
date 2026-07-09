@@ -165,7 +165,7 @@ export function AppDataProvider({ children }) {
 
   const submitWordleGuess = useCallback(async (guess, answer) => {
     const { data } = await wordleService.submitGuess(guess, answer, token || undefined)
-    if (data?.isCorrect) {
+    if (data && "isCorrect" in data && data.isCorrect) {
       await refreshRankings()
     }
     return data
