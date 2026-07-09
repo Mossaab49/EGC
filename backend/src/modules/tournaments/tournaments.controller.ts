@@ -1,39 +1,59 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import { UserRole } from '@prisma/client'
+import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import { Roles } from '../auth/decorators/roles.decorator'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { RolesGuard } from '../auth/guards/roles.guard'
+import { AuthenticatedUser } from '../auth/types/auth-response.type'
 import { CreateTournamentDto } from './dto/create-tournament.dto'
 import { UpdateTournamentDto } from './dto/update-tournament.dto'
-import { TournamentsService } from './tournaments.service'
+import { TournamentResponse, TournamentsService } from './tournaments.service'
 
 @Controller('tournaments')
 export class TournamentsController {
   constructor(private readonly tournamentsService: TournamentsService) {}
 
   @Get()
-  findAll() {
+  findAll(): Promise<TournamentResponse[]> {
     return this.tournamentsService.findAll()
   }
 
+  @Get('mine')
+  @UseGuards(JwtAuthGuard)
+  findMine(@CurrentUser() user: AuthenticatedUser): Promise<TournamentResponse[]> {
+    return this.tournamentsService.findAllForUser(user.id)
+  }
+
   @Post()
-  create(@Body() dto: CreateTournamentDto) {
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  create(@Body() dto: CreateTournamentDto): Promise<TournamentResponse> {
     return this.tournamentsService.create(dto)
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateTournamentDto) {
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  update(@Param('id') id: string, @Body() dto: UpdateTournamentDto): Promise<TournamentResponse> {
     return this.tournamentsService.update(id, dto)
   }
 
   @Post(':id/register')
-  register(@Param('id') id: string) {
-    return this.tournamentsService.register(id)
+  @UseGuards(JwtAuthGuard)
+  register(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser): Promise<TournamentResponse> {
+    return this.tournamentsService.register(id, user.id, user.name)
   }
 
   @Post(':id/cancel')
-  cancel(@Param('id') id: string) {
-    return this.tournamentsService.cancel(id)
+  @UseGuards(JwtAuthGuard)
+  cancel(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser): Promise<TournamentResponse> {
+    return this.tournamentsService.cancel(id, user.id)
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  remove(@Param('id') id: string): Promise<{ deleted: true }> {
     return this.tournamentsService.remove(id)
   }
 }

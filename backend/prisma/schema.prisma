@@ -86,6 +86,7 @@ model Tournament {
 model TournamentEntry {
   id           String     @id @default(cuid())
   userId       String     @db.Uuid
+  userName     String     @default("")
   tournamentId String
   createdAt    DateTime   @default(now())
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)

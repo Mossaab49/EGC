@@ -52,6 +52,7 @@
  * @property {string} reward
  * @property {string} format
  * @property {string} imageUrl
+ * @property {boolean=} isRegistered
  */
 
 /**
@@ -179,4 +180,3 @@
  */
 
 export {}
-

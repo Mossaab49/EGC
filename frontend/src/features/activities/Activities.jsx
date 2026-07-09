@@ -46,6 +46,10 @@ export function Activities({ go, showSuccess }) {
   const tournamentFallbackImage = makeGameImage('TOURNOI', '#7C3AED', '#11122c')
   const tournamentImage = activeTournament?.imageUrl || tournamentFallbackImage
 
+  useEffect(() => {
+    setRegistered(Boolean(activeTournament?.isRegistered))
+  }, [activeTournament?.id, activeTournament?.isRegistered])
+
   return (
     <>
       <PageHeader eyebrow="Espace membre" title="Activites EGC" lead="Joue chaque jour, participe aux tournois et construis ta progression dans la communaute.">
@@ -195,5 +199,3 @@ function WordleGame({ wordBank, showSuccess, go, loadEnglishGuessWords, loadWord
     </div>
   )
 }
-
-

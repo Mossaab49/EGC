@@ -27,7 +27,7 @@ export function AppDataProvider({ children }) {
       const [membersResponse, eventsResponse, tournamentsResponse, wordBankResponse, minecraftRequestsResponse, rankingsResponse] = await Promise.all([
         membersService.getMembers(token),
         eventsService.getEvents(),
-        tournamentsService.getTournaments(),
+        tournamentsService.getTournaments(token),
         wordleService.getWordBank(),
         minecraftService.getRequests(),
         rankingService.getRankings(),
@@ -100,37 +100,37 @@ export function AppDataProvider({ children }) {
   }, [token])
 
   const createTournament = useCallback(async (tournament) => {
-    const { data: createdTournament } = await tournamentsService.createTournament(tournament)
+    const { data: createdTournament } = await tournamentsService.createTournament(tournament, token)
     setTournaments((items) => [...items, createdTournament])
     return createdTournament
-  }, [])
+  }, [token])
 
   const updateTournament = useCallback(async (id, patch) => {
-    const { data: updatedTournament } = await tournamentsService.updateTournament(id, patch)
+    const { data: updatedTournament } = await tournamentsService.updateTournament(id, patch, token)
     if (!updatedTournament) return null
     setTournaments((items) => items.map((item) => item.id === id ? updatedTournament : item))
     return updatedTournament
-  }, [])
+  }, [token])
 
   const deleteTournament = useCallback(async (id) => {
-    const { data: wasDeleted } = await tournamentsService.deleteTournament(id)
+    const { data: wasDeleted } = await tournamentsService.deleteTournament(id, token)
     if (wasDeleted) setTournaments((items) => items.filter((item) => item.id !== id))
     return wasDeleted
-  }, [])
+  }, [token])
 
   const registerToTournament = useCallback(async (id) => {
-    const { data: updatedTournament } = await tournamentsService.registerToTournament(id)
+    const { data: updatedTournament } = await tournamentsService.registerToTournament(id, token)
     if (!updatedTournament) return null
     setTournaments((items) => items.map((item) => item.id === id ? updatedTournament : item))
     return updatedTournament
-  }, [])
+  }, [token])
 
   const cancelRegistration = useCallback(async (id) => {
-    const { data: updatedTournament } = await tournamentsService.cancelRegistration(id)
+    const { data: updatedTournament } = await tournamentsService.cancelRegistration(id, token)
     if (!updatedTournament) return null
     setTournaments((items) => items.map((item) => item.id === id ? updatedTournament : item))
     return updatedTournament
-  }, [])
+  }, [token])
 
   const addWord = useCallback(async (word) => {
     const { data: nextWordBank } = await wordleService.addWord(word)
@@ -249,4 +249,3 @@ export function useAppData() {
   }
   return context
 }
-
