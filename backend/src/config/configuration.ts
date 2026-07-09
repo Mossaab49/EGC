@@ -12,6 +12,9 @@ export type AppConfiguration = {
   database: {
     url: string
   }
+  minecraft: {
+    apiKey: string
+  }
 }
 
 export default (): AppConfiguration => ({
@@ -27,5 +30,8 @@ export default (): AppConfiguration => ({
   },
   database: {
     url: process.env.DATABASE_URL ?? '',
+  },
+  minecraft: {
+    apiKey: process.env.MINECRAFT_API_KEY ?? '',
   },
 })

@@ -129,7 +129,7 @@ model PointTransaction {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
-  @@index([source, referenceId])
+  @@unique([source, referenceId])
 }
 
 model MinecraftRequest {
