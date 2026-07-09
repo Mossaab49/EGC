@@ -8,12 +8,15 @@ export type AppEnvironment = {
   JWT_SECRET: string
   JWT_EXPIRES_IN: string
   FRONTEND_URL: string
+  MINECRAFT_API_KEY: string
 }
 
 export function validateConfig(config: Record<string, unknown>): AppEnvironment {
   const nodeEnv = parseEnvironment(config.NODE_ENV)
   const jwtSecret = requiredString(config.JWT_SECRET, 'JWT_SECRET')
+  const minecraftApiKey = requiredString(config.MINECRAFT_API_KEY, 'MINECRAFT_API_KEY')
   validateProductionSecret(jwtSecret, nodeEnv)
+  validateProductionSecret(minecraftApiKey, nodeEnv, 'MINECRAFT_API_KEY')
 
   return {
     NODE_ENV: nodeEnv,
@@ -23,6 +26,7 @@ export function validateConfig(config: Record<string, unknown>): AppEnvironment 
     JWT_SECRET: jwtSecret,
     JWT_EXPIRES_IN: optionalString(config.JWT_EXPIRES_IN, '7d'),
     FRONTEND_URL: resolveFrontendUrl(config.FRONTEND_URL, nodeEnv),
+    MINECRAFT_API_KEY: minecraftApiKey,
   }
 }
 
@@ -65,9 +69,13 @@ function resolveFrontendUrl(value: unknown, nodeEnv: Environment): string {
   }
 }
 
-function validateProductionSecret(secret: string, nodeEnv: Environment): void {
+function validateProductionSecret(
+  secret: string,
+  nodeEnv: Environment,
+  key = 'JWT_SECRET',
+): void {
   if (nodeEnv !== 'production') return
   if (secret.includes('change-me') || secret.length < 32) {
-    throw new Error('JWT_SECRET must be a strong production secret of at least 32 characters')
+    throw new Error(`${key} must be a strong production secret of at least 32 characters`)
   }
 }
