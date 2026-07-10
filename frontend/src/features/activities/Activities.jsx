@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button.jsx'
 import { Field } from '../../components/ui/Field.jsx'
 import { Pill } from '../../components/ui/Pill.jsx'
 import { useAppData } from '../../context/AppDataContext.jsx'
+import { useAuth } from '../../context/AuthContext.jsx'
 import { useToastContext } from '../../context/ToastContext.jsx'
 import { makeGameImage } from '../../lib/game-images.js'
 import { buildWordleRows, fallbackEnglishGuessWords } from '../../lib/wordle.js'
@@ -32,12 +33,14 @@ export function Activities({ go, showSuccess }) {
     cancelRegistration,
     loadEnglishGuessWords,
     loadWordleProgress,
+    rankings,
     registerToTournament,
     submitMinecraftParticipationRequest,
     submitWordleGuess,
     tournaments,
     wordBank,
   } = useAppData()
+  const { user } = useAuth()
   const { toast } = useToastContext()
   const [tab, setTab] = useState('wordle')
   const [registered, setRegistered] = useState(false)
@@ -46,6 +49,12 @@ export function Activities({ go, showSuccess }) {
   const activeTournament = tournaments.find((tournament) => tournament.status === 'Actif') || tournaments[0]
   const tournamentFallbackImage = makeGameImage('TOURNOI', '#7C3AED', '#11122c')
   const tournamentImage = activeTournament?.imageUrl || tournamentFallbackImage
+  const currentRankingRow = useMemo(() => {
+    if (!user) return null
+    return rankings.monthly.find(([, name]) => name.toLowerCase() === user.name.toLowerCase()) || null
+  }, [rankings.monthly, user])
+  const currentPoints = currentRankingRow?.[3] ?? 0
+  const currentRank = currentRankingRow?.[0] ?? null
 
   useEffect(() => {
     setRegistered(Boolean(activeTournament?.isRegistered))
@@ -57,7 +66,7 @@ export function Activities({ go, showSuccess }) {
         <div className="tabs">{[['wordle', 'Wordle EGC'], ['tournament', 'Tournoi hebdomadaire'], ['minecraft', 'Serveur Minecraft']].map(([id, label]) => <button key={id} onClick={() => setTab(id)} className={`tab ${tab === id ? 'active' : ''}`}>{label}</button>)}</div>
       </PageHeader>
       <section className="section compact"><div className="container">
-        {tab === 'wordle' && <WordleGame wordBank={wordBank} showSuccess={showSuccess} go={go} loadEnglishGuessWords={loadEnglishGuessWords} loadWordleProgress={loadWordleProgress} submitWordleGuess={submitWordleGuess} />}
+        {tab === 'wordle' && <WordleGame wordBank={wordBank} showSuccess={showSuccess} go={go} loadEnglishGuessWords={loadEnglishGuessWords} loadWordleProgress={loadWordleProgress} submitWordleGuess={submitWordleGuess} currentPoints={currentPoints} currentRank={currentRank} />}
         {tab === 'tournament' && <div className="tournament-layout fade-enter">
           <div className="tournament-banner image-tournament"><img src={tournamentImage} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = tournamentFallbackImage }} /><Pill tone="gold">TOURNOI HEBDOMADAIRE</Pill><Button className="tournament-register-btn" variant={registered ? 'danger' : 'gold'} onClick={async () => { if (registered) { if (activeTournament) await cancelRegistration(activeTournament.id); setRegistered(false); toast({ title: 'Inscription annulee', copy: 'Tu peux te reinscrire avant la fermeture du tournoi.' }); return } if (activeTournament) await registerToTournament(activeTournament.id); setRegistered(true); showSuccess({ title: 'Inscription confirmee', copy: 'Ton dossard #EGC-024 est reserve. Le lien Discord sera envoye avant le tournoi.', action: () => go('ranking'), actionLabel: 'Voir le classement' }) }}>{registered ? "Annuler l'inscription" : "S'inscrire au tournoi"}</Button></div>
           <div className="panel details-panel"><h3>Infos du tournoi</h3><Detail label="Format" text={activeTournament?.format || 'Format a definir'} /><Detail label="Recompense" text={activeTournament?.reward || 'Recompense a definir'} /><Detail label="Date" text={activeTournament?.date || 'Date a definir'} />{registered && <div className="ticket"><strong>OK Inscription confirmee</strong></div>}</div>
@@ -91,7 +100,7 @@ export function Activities({ go, showSuccess }) {
   )
 }
 
-function WordleGame({ wordBank, showSuccess, go, loadEnglishGuessWords, loadWordleProgress, submitWordleGuess }) {
+function WordleGame({ wordBank, showSuccess, go, loadEnglishGuessWords, loadWordleProgress, submitWordleGuess, currentPoints, currentRank }) {
   const playableWords = useMemo(() => wordBank.filter((word) => word.length >= 3), [wordBank])
   const [englishGuessWords, setEnglishGuessWords] = useState(fallbackEnglishGuessWords)
   const [dictionaryLoaded, setDictionaryLoaded] = useState(false)
@@ -215,7 +224,7 @@ function WordleGame({ wordBank, showSuccess, go, loadEnglishGuessWords, loadWord
         </form>
       </div>
       <div className="side-stack">
-        <div className="score-panel"><h3>Ta progression</h3><strong>245</strong><p>points au total</p><div className="ranking-mini"><b>#4</b><span>au classement</span></div><div className="score-orb" /></div>
+        <div className="score-panel"><h3>Ta progression</h3><strong>{currentPoints}</strong><p>points au total</p><div className="ranking-mini"><b>{currentRank ? `#${currentRank}` : '-'}</b><span>{currentRank ? 'au classement' : 'pas encore classe'}</span></div><div className="score-orb" /></div>
         <div className="panel help-panel"><h3>Comment jouer</h3><Legend tone="correct" text="Bonne lettre, bonne position" /><Legend tone="present" text="Bonne lettre, mauvaise position" /><Legend tone="absent" text="Lettre absente du mot" /><p className="wordle-answer-hint">Les essais valides doivent etre dans la banque EGC ou dans le dictionnaire anglais {dictionaryLoaded ? 'charge depuis words.txt' : 'en cours de chargement'}.</p></div>
       </div>
     </div>
