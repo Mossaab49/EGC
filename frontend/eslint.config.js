@@ -17,6 +17,7 @@ export default [
         FormData: 'readonly',
         setTimeout: 'readonly',
         window: 'readonly',
+        URL: "readonly",
       },
     },
     rules: {
