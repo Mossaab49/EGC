@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { SuccessOverlay } from './components/shared/SuccessOverlay.jsx'
-import { Button } from './components/ui/Button.jsx'
-import { Modal } from './components/ui/Modal.jsx'
 import { Toast } from './components/ui/Toast.jsx'
 import { navItems } from './constants/navigation.js'
 import { AppDataProvider } from './context/AppDataContext.jsx'
@@ -32,7 +30,6 @@ function AppContent() {
   const { toast, toastState } = useToastContext()
   const [page, setPage] = useState(/** @type {import('./types/domain.js').PageId} */ ('home'))
   const [navOpen, setNavOpen] = useState(false)
-  const [signupEvent, setSignupEvent] = useState(/** @type {import('./types/domain.js').EventItem | null} */ (null))
   const [success, setSuccess] = useState(/** @type {import('./types/domain.js').SuccessMessage | null} */ (null))
 
   /**
@@ -64,7 +61,12 @@ function AppContent() {
    */
   const openSignup = (event) => {
     if (!event?.isSignupOpen) return
-    setSignupEvent(event)
+    if (!isExternalUrl(event.postUrl)) {
+      toast({ title: 'Lien indisponible', copy: "Le formulaire d'inscription n'est pas encore configure par l'admin." })
+      return
+    }
+
+    window.open(event.postUrl, '_blank', 'noopener,noreferrer')
   }
   const handleLogout = () => {
     logout()
@@ -104,9 +106,17 @@ function AppContent() {
         {page === 'ranking' && <Ranking go={go} />}
         {page === 'admin' && <Admin />}
       </main>
-      <Modal open={Boolean(signupEvent)} onClose={() => setSignupEvent(null)}><button className="modal-close" onClick={() => setSignupEvent(null)}>x</button><div className="modal-symbol">-&gt;</div><h2>{signupEvent ? `Inscription - ${signupEvent.title}` : 'Inscription'}</h2><p>Le formulaire d'inscription s'ouvre dans un nouvel onglet. Aucune donnee ne sera enregistree directement par EGC.</p><div className="modal-actions"><Button onClick={() => { setSignupEvent(null); toast({ title: 'Formulaire externe', copy: "Simulation : redirection vers le formulaire d'inscription." }) }}>Ouvrir le formulaire</Button><Button variant="secondary" onClick={() => setSignupEvent(null)}>Retour aux evenements</Button></div></Modal>
       <SuccessOverlay success={success} close={() => setSuccess(null)} />
       <Toast toast={toastState} />
     </div>
   )
+}
+
+function isExternalUrl(value) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
 }

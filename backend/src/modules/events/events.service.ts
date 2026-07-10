@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { Event, EventStatus } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { CreateEventDto } from './dto/create-event.dto'
@@ -76,6 +76,9 @@ export class EventsService {
 
   async openSignup(id: string): Promise<EventResponse> {
     const target = await this.requireEvent(id)
+    if (!this.isExternalFormUrl(target.postUrl)) {
+      throw new BadRequestException("Ajoute un lien de formulaire d'inscription valide avant d'ouvrir l'inscription.")
+    }
 
     const [, event] = await this.prisma.$transaction([
       this.prisma.event.updateMany({ data: { isSignupOpen: false } }),
@@ -126,5 +129,14 @@ export class EventsService {
     if (status === EventStatus.PAST) return 'Passe'
     if (status === EventStatus.DRAFT) return 'Brouillon'
     return 'A venir'
+  }
+
+  private isExternalFormUrl(value: string): boolean {
+    try {
+      const url = new URL(value)
+      return url.protocol === 'http:' || url.protocol === 'https:'
+    } catch {
+      return false
+    }
   }
 }

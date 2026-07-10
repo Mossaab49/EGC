@@ -9,6 +9,7 @@ import { makeGameImage } from '../../lib/game-images.js'
 
 function EventCard({ event, onSignup, onDetails, mode = 'upcoming' }) {
   const isPast = mode === 'past' || event.status === 'Passe'
+  const canRegister = event.isSignupOpen && isExternalUrl(event.postUrl)
 
   return (
     <article className="event-card reveal-card">
@@ -21,16 +22,21 @@ function EventCard({ event, onSignup, onDetails, mode = 'upcoming' }) {
         <h3>{event.title}</h3>
         <p>{event.date} - {event.venue}</p>
         <div className="event-card-actions">
-          {isPast ? (
-            <Button variant="secondary" onClick={() => window.open(event.postUrl || '#', '_blank', 'noopener,noreferrer')}>Voir post</Button>
-          ) : (
-            <Button onClick={() => onSignup(event)} disabled={!event.isSignupOpen} className={!event.isSignupOpen ? 'is-disabled' : ''}>S'inscrire <span>-&gt;</span></Button>
-          )}
+          {!isPast && <Button onClick={() => onSignup(event)} disabled={!canRegister} className={!canRegister ? 'is-disabled' : ''}>S'inscrire <span>-&gt;</span></Button>}
           <Button variant="ghost" onClick={() => onDetails(event)}>Infos</Button>
         </div>
       </div>
     </article>
   )
+}
+
+function isExternalUrl(value) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
 }
 
 function EventInfoModal({ event, onClose }) {

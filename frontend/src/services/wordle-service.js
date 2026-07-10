@@ -7,6 +7,17 @@ let wordBank = [...initialWords]
 const cloneWordBank = () => [...wordBank]
 
 /**
+ * @param {string=} token
+ * @returns {Promise<import('../types/domain.js').ApiResponse<string>>}
+ */
+export async function getTodayWord(token) {
+  if (!token) throw new Error('Session admin expiree. Reconnecte-toi.')
+
+  const data = await apiRequest('/wordle/today', { token })
+  return successResponse(/** @type {string} */ (data))
+}
+
+/**
  * @returns {Promise<import('../types/domain.js').ApiResponse<string[]>>}
  */
 export async function getWordBank() {

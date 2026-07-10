@@ -1,4 +1,4 @@
-import { IsBoolean, IsIn, IsOptional, IsString, MinLength } from 'class-validator'
+import { IsBoolean, IsIn, IsOptional, IsString, IsUrl, MinLength } from 'class-validator'
 
 export class CreateEventDto {
   @IsOptional()
@@ -30,7 +30,7 @@ export class CreateEventDto {
   @IsString()
   rules: string
 
-  @IsString()
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
   postUrl: string
 
   @IsOptional()

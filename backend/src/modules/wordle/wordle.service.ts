@@ -37,6 +37,12 @@ export class WordleService {
     return this.getWordBank()
   }
 
+  async getTodayWord(): Promise<string> {
+    const puzzle = await this.getTodayPuzzle()
+    await this.cleanupExpiredAttempts(puzzle.puzzleKey)
+    return puzzle.answer
+  }
+
   async getProgress(userId: string): Promise<WordleProgressResponse> {
     const puzzle = await this.getTodayPuzzle()
     await this.cleanupExpiredAttempts(puzzle.puzzleKey)

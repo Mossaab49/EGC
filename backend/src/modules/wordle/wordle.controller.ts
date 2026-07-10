@@ -18,6 +18,13 @@ export class WordleController {
     return this.wordleService.getWords()
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('today')
+  getTodayWord() {
+    return this.wordleService.getTodayWord()
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('progress')
   getProgress(@CurrentUser() user: AuthenticatedUser) {

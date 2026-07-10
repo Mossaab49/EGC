@@ -37,7 +37,7 @@
  * @property {string} category
  * @property {string} details
  * @property {string} rules
- * @property {string} postUrl
+ * @property {string} postUrl Formulaire externe d'inscription.
  * @property {boolean} isSignupOpen
  */
 
@@ -166,6 +166,7 @@
  * @property {string[]} wordBank
  * @property {(word: string) => Promise<string[]>} addWord
  * @property {(word: string) => Promise<string[]>} removeWord
+ * @property {() => Promise<string>} getTodayWord
  * @property {() => Promise<WordleProgress>} loadWordleProgress
  * @property {(guess: string) => Promise<WordleAttempt | WordleProgress>} submitWordleGuess
  * @property {() => Promise<string[]>} loadEnglishGuessWords

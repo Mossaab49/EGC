@@ -150,6 +150,11 @@ export function AppDataProvider({ children }) {
     return nextRankings
   }, [])
 
+  const getTodayWord = useCallback(async () => {
+    const { data } = await wordleService.getTodayWord(token || undefined)
+    return data
+  }, [token])
+
   const loadWordleProgress = useCallback(async () => {
     if (!token) {
       throw new Error('Session expiree. Reconnecte-toi.')
@@ -207,6 +212,7 @@ export function AppDataProvider({ children }) {
     wordBank,
     addWord,
     removeWord,
+    getTodayWord,
     loadWordleProgress,
     submitWordleGuess,
     loadEnglishGuessWords,
@@ -227,6 +233,7 @@ export function AppDataProvider({ children }) {
     deleteTournament,
     deleteTreatedMinecraftRequests,
     events,
+    getTodayWord,
     isLoading,
     loadWordleProgress,
     loadEnglishGuessWords,
