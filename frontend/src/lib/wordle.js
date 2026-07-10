@@ -65,10 +65,10 @@ export function scoreGuess(guess, answer) {
   return result
 }
 
-export function buildWordleRows({ guesses, currentGuess, answer, isWon, isLost }) {
+export function buildWordleRows({ guesses, currentGuess, wordLength, isWon, isLost }) {
   return Array.from({ length: 6 }, (_, index) => {
     if (guesses[index]) return guesses[index]
-    if (index === guesses.length && !isWon && !isLost) return currentGuess.padEnd(answer.length, ' ')
-    return ' '.repeat(answer.length)
+    if (index === guesses.length && !isWon && !isLost) return currentGuess.padEnd(wordLength, ' ')
+    return ' '.repeat(wordLength)
   })
 }

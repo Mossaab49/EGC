@@ -9,22 +9,22 @@ import { Pill } from '../../components/ui/Pill.jsx'
 import { useAppData } from '../../context/AppDataContext.jsx'
 import { useToastContext } from '../../context/ToastContext.jsx'
 import { makeGameImage } from '../../lib/game-images.js'
-import { buildWordleRows, fallbackEnglishGuessWords, getDailyWord, scoreGuess } from '../../lib/wordle.js'
+import { buildWordleRows, fallbackEnglishGuessWords } from '../../lib/wordle.js'
 
 function getProgressGuesses(progress) {
   return progress?.attempts?.map((attempt) => attempt.guess) || []
 }
 
 function isWordleProgress(value) {
-  return typeof value === 'object' && value !== null && Array.isArray(value.attempts) && typeof value.answer === 'string'
+  return typeof value === 'object' && value !== null && Array.isArray(value.attempts)
 }
 
-function getProgressMessage(progress, answer) {
+function getProgressMessage(progress, wordLength) {
   const guesses = getProgressGuesses(progress)
-  if (progress?.isWon || guesses.includes(answer)) return 'Bravo, mot trouve !'
-  if (progress?.isLost || guesses.length >= 6) return `Perdu. Le mot etait ${answer}.`
+  if (progress?.isWon) return 'Bravo, mot trouve !'
+  if (progress?.isLost || guesses.length >= 6) return progress?.answer ? `Perdu. Le mot etait ${progress.answer}.` : 'Perdu. Le mot est maintenant revele.'
   if (guesses.length > 0) return `${6 - guesses.length} essais restants.`
-  return `Entre un mot de ${answer.length} lettres.`
+  return `Entre un mot de ${wordLength} lettres.`
 }
 
 export function Activities({ go, showSuccess }) {
@@ -99,12 +99,11 @@ function WordleGame({ wordBank, showSuccess, go, loadEnglishGuessWords, loadWord
   const [isLoadingProgress, setIsLoadingProgress] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentGuess, setCurrentGuess] = useState('')
-  const fallbackAnswer = useMemo(() => getDailyWord(playableWords), [playableWords])
-  const answer = progress?.answer || fallbackAnswer
+  const wordLength = progress?.wordLength || 5
   const guesses = useMemo(() => getProgressGuesses(progress), [progress])
   const validGuesses = useMemo(() => new Set([...playableWords, ...englishGuessWords]), [playableWords, englishGuessWords])
-  const [message, setMessage] = useState(`Entre un mot de ${answer.length} lettres.`)
-  const isWon = Boolean(progress?.isWon || guesses.includes(answer))
+  const [message, setMessage] = useState(`Entre un mot de ${wordLength} lettres.`)
+  const isWon = Boolean(progress?.isWon)
   const isLost = Boolean(progress?.isLost || (guesses.length >= 6 && !isWon))
 
   useEffect(() => {
@@ -117,10 +116,10 @@ function WordleGame({ wordBank, showSuccess, go, loadEnglishGuessWords, loadWord
         if (cancelled) return
         setProgress(nextProgress)
         setCurrentGuess('')
-        setMessage(getProgressMessage(nextProgress, nextProgress.answer))
+        setMessage(getProgressMessage(nextProgress, nextProgress.wordLength))
       } catch (error) {
         if (!cancelled) {
-          setMessage(error instanceof Error ? error.message : `Entre un mot de ${answer.length} lettres.`)
+          setMessage(error instanceof Error ? error.message : `Entre un mot de ${wordLength} lettres.`)
         }
       } finally {
         if (!cancelled) setIsLoadingProgress(false)
@@ -129,7 +128,7 @@ function WordleGame({ wordBank, showSuccess, go, loadEnglishGuessWords, loadWord
 
     loadProgress()
     return () => { cancelled = true }
-  }, [answer.length, loadWordleProgress])
+  }, [loadWordleProgress, wordLength])
 
   useEffect(() => {
     let cancelled = false
@@ -150,8 +149,8 @@ function WordleGame({ wordBank, showSuccess, go, loadEnglishGuessWords, loadWord
     event.preventDefault()
     const guess = currentGuess.toUpperCase()
     if (isWon || isLost || isSubmitting) return
-    if (guess.length !== answer.length) {
-      setMessage(`Le mot doit contenir ${answer.length} lettres.`)
+    if (guess.length !== wordLength) {
+      setMessage(`Le mot doit contenir ${wordLength} lettres.`)
       return
     }
     if (!validGuesses.has(guess)) {
@@ -165,29 +164,30 @@ function WordleGame({ wordBank, showSuccess, go, loadEnglishGuessWords, loadWord
 
     setIsSubmitting(true)
     try {
-      const result = await submitWordleGuess(guess, answer)
+      const result = await submitWordleGuess(guess)
       setCurrentGuess('')
 
       if (isWordleProgress(result)) {
         setProgress(result)
-        setMessage(getProgressMessage(result, result.answer))
+        setMessage(getProgressMessage(result, result.wordLength || wordLength))
         if (result.isWon && !isWon) {
           const attemptCount = result.attempts.length
-          setTimeout(() => showSuccess({ title: 'Mot trouve !', copy: `${result.answer} - ${attemptCount} essais - +5 points`, action: () => go('ranking'), actionLabel: 'Voir le classement' }), 450)
+          setTimeout(() => showSuccess({ title: 'Mot trouve !', copy: `${result.answer || 'Reponse trouvee'} - ${attemptCount} essais - +5 points`, action: () => go('ranking'), actionLabel: 'Voir le classement' }), 450)
         }
         return
       }
 
       const fallbackProgress = {
         puzzleKey: 'local',
-        answer,
         attempts: [...(progress?.attempts || []), result],
         isWon: result.isCorrect,
         isLost: (progress?.attempts?.length || 0) + 1 >= 6 && !result.isCorrect,
         remainingAttempts: Math.max(0, 6 - ((progress?.attempts?.length || 0) + 1)),
+        wordLength,
+        ...(result.isCorrect ? { answer: result.answer } : {}),
       }
       setProgress(fallbackProgress)
-      setMessage(getProgressMessage(fallbackProgress, answer))
+      setMessage(getProgressMessage(fallbackProgress, wordLength))
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Impossible de sauvegarder cet essai.')
     } finally {
@@ -195,21 +195,21 @@ function WordleGame({ wordBank, showSuccess, go, loadEnglishGuessWords, loadWord
     }
   }
 
-  const rows = buildWordleRows({ guesses, currentGuess, answer, isWon, isLost })
+  const rows = buildWordleRows({ guesses, currentGuess, wordLength, isWon, isLost })
 
   return (
     <div className="wordle-layout fade-enter">
       <div className="panel wordle-panel">
-        <div className="panel-header"><div><Pill>WORDLE EGC</Pill><h3>Mot de {answer.length} lettres</h3><p>{isLoadingProgress ? 'Chargement de tes essais...' : message}</p></div><span className="timer">{guesses.length}/6 essais</span></div>
+        <div className="panel-header"><div><Pill>WORDLE EGC</Pill><h3>Mot de {wordLength} lettres</h3><p>{isLoadingProgress ? 'Chargement de tes essais...' : message}</p></div><span className="timer">{guesses.length}/6 essais</span></div>
         <div className="wordle-board">
           {rows.map((row, rowIndex) => (
             <div className="wordle-row" key={`${rowIndex}-${row}`}>
-              {row.split('').map((letter, index) => <Tile key={`${rowIndex}-${index}`} value={letter.trim()} status={guesses[rowIndex] ? scoreGuess(row, answer)[index] : ''} />)}
+              {row.split('').map((letter, index) => <Tile key={`${rowIndex}-${index}`} value={letter.trim()} status={progress?.attempts?.[rowIndex]?.statuses?.[index] || ''} />)}
             </div>
           ))}
         </div>
         <form className="wordle-form" onSubmit={submitGuess}>
-          <input value={currentGuess} disabled={isWon || isLost || isLoadingProgress || isSubmitting} onChange={(event) => setCurrentGuess(event.target.value.replace(/[^a-zA-Z]/g, '').slice(0, answer.length).toUpperCase())} maxLength={answer.length} placeholder={answer.replace(/[A-Z]/g, '_')} />
+          <input value={currentGuess} disabled={isWon || isLost || isLoadingProgress || isSubmitting} onChange={(event) => setCurrentGuess(event.target.value.replace(/[^a-zA-Z]/g, '').slice(0, wordLength).toUpperCase())} maxLength={wordLength} placeholder={'_'.repeat(wordLength)} />
           <Button type="submit" disabled={isWon || isLost || isLoadingProgress || isSubmitting}>{isSubmitting ? 'Sauvegarde...' : 'Valider'}</Button>
         </form>
       </div>

@@ -64,7 +64,7 @@
 /**
  * @typedef {object} WordleAttempt
  * @property {string} guess
- * @property {string} answer
+ * @property {string=} answer
  * @property {WordleLetterStatus[]} statuses
  * @property {boolean} isCorrect
  */
@@ -72,11 +72,12 @@
 /**
  * @typedef {object} WordleProgress
  * @property {string} puzzleKey
- * @property {string} answer
+ * @property {string=} answer
  * @property {WordleAttempt[]} attempts
  * @property {boolean} isWon
  * @property {boolean} isLost
  * @property {number} remainingAttempts
+ * @property {number} wordLength
  */
 
 /**
@@ -164,9 +165,8 @@
  * @property {string[]} wordBank
  * @property {(word: string) => Promise<string[]>} addWord
  * @property {(word: string) => Promise<string[]>} removeWord
- * @property {() => Promise<string>} getTodayWord
  * @property {() => Promise<WordleProgress>} loadWordleProgress
- * @property {(guess: string, answer: string) => Promise<WordleAttempt | WordleProgress>} submitWordleGuess
+ * @property {(guess: string) => Promise<WordleAttempt | WordleProgress>} submitWordleGuess
  * @property {() => Promise<string[]>} loadEnglishGuessWords
  * @property {MinecraftRequest[]} minecraftRequests
  * @property {(request: Omit<MinecraftRequest, 'status'>) => Promise<MinecraftRequest>} submitMinecraftParticipationRequest

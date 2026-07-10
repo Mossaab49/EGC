@@ -1,6 +1,9 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common'
+import { UserRole } from '@prisma/client'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import { Roles } from '../auth/decorators/roles.decorator'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { RolesGuard } from '../auth/guards/roles.guard'
 import { AuthenticatedUser } from '../auth/types/auth-response.type'
 import { AddWordDto } from './dto/add-word.dto'
 import { SubmitGuessDto } from './dto/submit-guess.dto'
@@ -15,17 +18,14 @@ export class WordleController {
     return this.wordleService.getWords()
   }
 
-  @Get('today')
-  getTodayWord() {
-    return this.wordleService.getTodayWord()
-  }
-
   @UseGuards(JwtAuthGuard)
   @Get('progress')
   getProgress(@CurrentUser() user: AuthenticatedUser) {
     return this.wordleService.getProgress(user.id)
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Post('words')
   addWord(@Body() dto: AddWordDto) {
     return this.wordleService.addWord(dto)

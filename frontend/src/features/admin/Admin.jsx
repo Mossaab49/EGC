@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { PageHeader } from '../../components/shared/PageHeader.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Field } from '../../components/ui/Field.jsx'
@@ -23,7 +23,6 @@ export function Admin() {
     deleteTournament,
     deleteTreatedMinecraftRequests,
     events,
-    getTodayWord,
     members,
     minecraftRequests,
     openEventSignup,
@@ -43,23 +42,6 @@ export function Admin() {
   const [query, setQuery] = useState('')
   const [newMemberOpen, setNewMemberOpen] = useState(false)
   const [wordInput, setWordInput] = useState('')
-  const [todayWord, setTodayWord] = useState('')
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadTodayWord() {
-      try {
-        const word = await getTodayWord()
-        if (!cancelled) setTodayWord(word)
-      } catch {
-        if (!cancelled) setTodayWord('')
-      }
-    }
-
-    if (active === 'wordle') loadTodayWord()
-    return () => { cancelled = true }
-  }, [active, getTodayWord, wordBank.length])
   const filteredMembers = useMemo(() => members.filter((member) => `${member.name} ${member.email}`.toLowerCase().includes(query.toLowerCase())), [members, query])
   const changeRequest = async (id, status) => {
     await updateMinecraftRequestStatus(id, status)
@@ -111,7 +93,7 @@ export function Admin() {
         <div className="admin-content"><div className="admin-top"><div><p className="eyebrow">{adminTabs.find((item) => item.id === active)?.label}</p><h2>{active === 'overview' ? 'Tableau de bord' : adminTabs.find((item) => item.id === active)?.label}</h2><p>Juillet 2026 - Donnees de demonstration interactives</p></div><div className="admin-actions"><button className={`motion-control ${motion === 'boost' ? 'active' : ''}`} onClick={() => setMotion(motion === 'boost' ? 'soft' : 'boost')}>{motion === 'boost' ? '* Effets boostes' : 'o Effets doux'}</button><Button onClick={() => setNewMemberOpen(true)}>Creer un membre</Button></div></div>
           {active === 'overview' && <Overview setActive={setActive} events={events} tournaments={tournaments} minecraftRequests={minecraftRequests} />}
           {active === 'members' && <Members rows={filteredMembers} query={query} setQuery={setQuery} onRemove={removeMember} onPasswordReset={handleResetMemberPassword} />}
-          {active === 'wordle' && <WordleAdmin words={wordBank} todayWord={todayWord} wordInput={wordInput} setWordInput={setWordInput} addWord={addWordToBank} removeWord={removeWord} />}
+          {active === 'wordle' && <WordleAdmin words={wordBank} wordInput={wordInput} setWordInput={setWordInput} addWord={addWordToBank} removeWord={removeWord} />}
           {active === 'events' && <EventsAdmin rows={events} createEvent={createEvent} updateEvent={updateEvent} deleteEvent={deleteEvent} openEventSignup={openEventSignup} toast={toast} />}
           {active === 'tournaments' && <TournamentsAdmin tournaments={tournaments} createTournament={createTournament} updateTournament={updateTournament} deleteTournament={deleteTournament} toast={toast} />}
           {active === 'minecraft' && <MinecraftAdmin rows={minecraftRequests} changeRequest={changeRequest} clearTreated={clearTreatedMinecraftRequests} />}
@@ -152,8 +134,8 @@ function Members({ rows, query, setQuery, onRemove, onPasswordReset }) {
   return <div className="admin-view fade-enter"><div className="toolbar"><div><h3>Membres de la communaute</h3><p>Creation, gestion des roles et suivi des points.</p></div><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher un membre..." /></div>{selectedMember && <form className="admin-card password-reset-card" onSubmit={submitPasswordReset}><div><p className="eyebrow">Reset acces</p><h3>Changer le mot de passe</h3><p>{selectedMember.name} pourra se connecter avec ce mot de passe temporaire.</p></div><label className="field"><span>Nouveau mot de passe</span><input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="Mot de passe temporaire" autoFocus /></label><div className="form-actions"><Button type="submit">Enregistrer</Button><Button type="button" variant="secondary" onClick={() => { setPasswordTarget(''); setNewPassword('') }}>Annuler</Button></div></form>}<div className="admin-card data-table members-table"><div className="data-head"><span>MEMBRE</span><span>ROLE</span><span>POINTS</span><span>STATUT</span><span>ACTIONS</span></div>{rows.map((member) => <div className="data-row" key={member.email}><span className="member-cell"><i>{member.name[0]}</i><b>{member.name}<small>{member.email}</small></b></span><Pill tone={member.role === 'Admin' ? 'purple' : 'muted'}>{member.role}</Pill><strong>{member.points}</strong><Pill tone={member.status === 'Actif' ? 'success' : 'warning'}>{member.status}</Pill><span className="row-buttons"><button className="row-action" onClick={() => openPasswordReset(member.email)}>Changer MDP</button><button className="row-action danger" onClick={() => onRemove(member)}>Retirer</button></span></div>)}</div></div>
 }
 
-function WordleAdmin({ words, todayWord, wordInput, setWordInput, addWord, removeWord }) {
-  return <div className="admin-view fade-enter"><div className="wordle-admin-grid"><article className="admin-card schedule-card"><p className="eyebrow">Publication backend</p><h3>Mot du jour Wordle</h3><div className="today-word"><span>{words.length}</span><strong>{todayWord || '...'}</strong><Pill tone="success">Backend</Pill></div><div className="schedule-line"><span className="line-dot" /><div><b>Lie au backend</b><p>Ce mot est calcule par l API Wordle avec la banque sauvegardee en base. Les essais des joueurs sont aussi sauvegardes cote backend.</p></div></div></article><article className="admin-card word-bank"><h3>Banque de mots</h3><p>Ajoute des mots gaming de 3 lettres ou plus.</p><div className="add-word"><input value={wordInput} onChange={(event) => setWordInput(event.target.value.replace(/[^a-zA-Z]/g, '').slice(0, 12).toUpperCase())} maxLength={12} placeholder="VALORANT" /><Button onClick={addWord}>Ajouter</Button></div><div className="word-list">{words.map((word, index) => <span key={word} style={cssVars({ '--delay': `${index * 55}ms` })}>{word}<button disabled={words.length <= 1} onClick={() => removeWord(word)}>x</button></span>)}</div></article></div></div>
+function WordleAdmin({ words, wordInput, setWordInput, addWord, removeWord }) {
+  return <div className="admin-view fade-enter"><div className="wordle-admin-grid"><article className="admin-card schedule-card"><p className="eyebrow">Publication backend</p><h3>Mot du jour Wordle</h3><div className="today-word"><span>{words.length}</span><strong>Cache jusqu'a la fin</strong><Pill tone="success">Securise</Pill></div><div className="schedule-line"><span className="line-dot" /><div><b>Reponse masquee</b><p>Le backend calcule le mot du jour, mais l API ne renvoie la reponse qu apres victoire ou defaite du joueur.</p></div></div></article><article className="admin-card word-bank"><h3>Banque de mots</h3><p>Ajoute des mots gaming de 3 lettres ou plus.</p><div className="add-word"><input value={wordInput} onChange={(event) => setWordInput(event.target.value.replace(/[^a-zA-Z]/g, '').slice(0, 12).toUpperCase())} maxLength={12} placeholder="VALORANT" /><Button onClick={addWord}>Ajouter</Button></div><div className="word-list">{words.map((word, index) => <span key={word} style={cssVars({ '--delay': `${index * 55}ms` })}>{word}<button disabled={words.length <= 1} onClick={() => removeWord(word)}>x</button></span>)}</div></article></div></div>
 }
 function EventsAdmin({ rows, createEvent, updateEvent, deleteEvent, openEventSignup, toast }) {
   const [form, setForm] = useState(emptyEventForm)

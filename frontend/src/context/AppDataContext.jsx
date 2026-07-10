@@ -133,10 +133,10 @@ export function AppDataProvider({ children }) {
   }, [token])
 
   const addWord = useCallback(async (word) => {
-    const { data: nextWordBank } = await wordleService.addWord(word)
+    const { data: nextWordBank } = await wordleService.addWord(word, token || undefined)
     setWordBank(nextWordBank)
     return nextWordBank
-  }, [])
+  }, [token])
 
   const removeWord = useCallback(async (word) => {
     const { data: nextWordBank } = await wordleService.removeWord(word)
@@ -150,11 +150,6 @@ export function AppDataProvider({ children }) {
     return nextRankings
   }, [])
 
-  const getTodayWord = useCallback(async () => {
-    const { data } = await wordleService.getTodayWord(token || undefined)
-    return data
-  }, [token])
-
   const loadWordleProgress = useCallback(async () => {
     if (!token) {
       throw new Error('Session expiree. Reconnecte-toi.')
@@ -163,9 +158,9 @@ export function AppDataProvider({ children }) {
     return data
   }, [token])
 
-  const submitWordleGuess = useCallback(async (guess, answer) => {
-    const { data } = await wordleService.submitGuess(guess, answer, token || undefined)
-    if (data && "isCorrect" in data && data.isCorrect) {
+  const submitWordleGuess = useCallback(async (guess) => {
+    const { data } = await wordleService.submitGuess(guess, token || undefined)
+    if (data && "isWon" in data && data.isWon) {
       await refreshRankings()
     }
     return data
@@ -212,7 +207,6 @@ export function AppDataProvider({ children }) {
     wordBank,
     addWord,
     removeWord,
-    getTodayWord,
     loadWordleProgress,
     submitWordleGuess,
     loadEnglishGuessWords,
@@ -233,7 +227,6 @@ export function AppDataProvider({ children }) {
     deleteTournament,
     deleteTreatedMinecraftRequests,
     events,
-    getTodayWord,
     isLoading,
     loadWordleProgress,
     loadEnglishGuessWords,

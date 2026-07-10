@@ -12,20 +12,21 @@ type LetterStatus = 'correct' | 'present' | 'absent'
 
 type WordleAttemptResponse = {
   guess: string
-  answer: string
   statuses: LetterStatus[]
   isCorrect: boolean
   points: number
   createdAt: Date
+  answer?: string
 }
 
 type WordleProgressResponse = {
   puzzleKey: string
-  answer: string
   attempts: WordleAttemptResponse[]
   isWon: boolean
   isLost: boolean
   remainingAttempts: number
+  wordLength: number
+  answer?: string
 }
 
 @Injectable()
@@ -34,12 +35,6 @@ export class WordleService {
 
   async getWords(): Promise<string[]> {
     return this.getWordBank()
-  }
-
-  async getTodayWord(): Promise<string> {
-    const puzzle = await this.getTodayPuzzle()
-    await this.cleanupExpiredAttempts(puzzle.puzzleKey)
-    return puzzle.answer
   }
 
   async getProgress(userId: string): Promise<WordleProgressResponse> {
@@ -166,22 +161,23 @@ export class WordleService {
 
     return {
       puzzleKey,
-      answer,
       attempts: mappedAttempts,
       isWon,
       isLost,
       remainingAttempts: Math.max(0, MAX_ATTEMPTS - mappedAttempts.length),
+      wordLength: answer.length,
+      ...(isWon || isLost ? { answer } : {}),
     }
   }
 
   private toAttemptResponse(attempt: WordleAttempt, answer: string): WordleAttemptResponse {
     return {
       guess: attempt.guess,
-      answer,
       statuses: scoreGuess(attempt.guess, answer),
       isCorrect: attempt.isCorrect,
       points: attempt.points,
       createdAt: attempt.createdAt,
+      ...(attempt.isCorrect ? { answer } : {}),
     }
   }
 }
