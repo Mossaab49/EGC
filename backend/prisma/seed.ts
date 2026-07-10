@@ -1,11 +1,14 @@
 import { EventStatus, MemberStatus, PrismaClient, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
+// Security: this seed must never run automatically in production unless
+// ADMIN_SEED_EMAIL and ADMIN_SEED_PASSWORD are explicitly provided and changed.
+
 const prisma = new PrismaClient();
 
 const PASSWORD_HASH_ROUNDS = 10;
-const ADMIN_EMAIL = 'ensatgamingclub@gmail.com';
-const ADMIN_PASSWORD = 'P@$$w04d';
+const ADMIN_EMAIL = getRequiredEnv('ADMIN_SEED_EMAIL');
+const ADMIN_PASSWORD = getRequiredEnv('ADMIN_SEED_PASSWORD');
 
 const demoEvents = [
   {
@@ -79,7 +82,7 @@ async function main(): Promise<void> {
 
   console.info('Seed completed:', admin);
   console.info(`Admin login: ${ADMIN_EMAIL}`);
-  console.info(`Admin password: ${ADMIN_PASSWORD}`);
+  console.info('Admin password: defined through environment variable.');
 
   for (const event of demoEvents) {
     await prisma.event.upsert({
@@ -90,6 +93,14 @@ async function main(): Promise<void> {
   }
 
   console.info(`Seeded events: ${demoEvents.length}`);
+}
+
+function getRequiredEnv(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`${name} is required to run prisma seed. Set it explicitly before seeding.`);
+  }
+  return value;
 }
 
 main()
