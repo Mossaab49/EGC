@@ -6,7 +6,9 @@ import { SubmitGuessDto } from './dto/submit-guess.dto'
 
 const FALLBACK_WORDS = ['ARENA', 'PIXEL', 'SQUAD', 'GAMER', 'CLASH', 'LEVEL']
 const MAX_ATTEMPTS = 6
-const WIN_POINTS = 5
+const BASE_WIN_POINTS = 5
+const MAX_ELAPSED_TIME_BONUS_POINTS = 5
+const WORDLE_DAY_DURATION_MS = 24 * 60 * 60 * 1000
 
 type LetterStatus = 'correct' | 'present' | 'absent'
 
@@ -81,7 +83,7 @@ export class WordleService {
     }
 
     const isCorrect = guess === puzzle.answer
-    const points = isCorrect ? WIN_POINTS : 0
+    const points = isCorrect ? calculateWordleWinPoints() : 0
 
     const nextAttempts = await this.prisma.$transaction(async (tx) => {
       const createdAttempt = await tx.wordleAttempt.create({
@@ -196,6 +198,20 @@ function getStartOfToday(date = new Date()): Date {
   const start = new Date(date)
   start.setHours(0, 0, 0, 0)
   return start
+}
+
+export function calculateWordleWinPoints(date = new Date()): number {
+  return BASE_WIN_POINTS + calculateElapsedWordleBonus(date)
+}
+
+function calculateElapsedWordleBonus(date = new Date()): number {
+  const elapsedMs = Math.max(0, date.getTime() - getStartOfToday(date).getTime())
+  const elapsedRatio = Math.min(elapsedMs / WORDLE_DAY_DURATION_MS, 1)
+  const elapsedBucket = Math.min(
+    MAX_ELAPSED_TIME_BONUS_POINTS,
+    Math.floor(elapsedRatio * (MAX_ELAPSED_TIME_BONUS_POINTS + 1)),
+  )
+  return MAX_ELAPSED_TIME_BONUS_POINTS - elapsedBucket
 }
 
 function scoreGuess(guess: string, answer: string): LetterStatus[] {

@@ -172,7 +172,8 @@ function WordleGame({ wordBank, showSuccess, go, loadEnglishGuessWords, loadWord
         setMessage(getProgressMessage(result, result.wordLength || wordLength))
         if (result.isWon && !isWon) {
           const attemptCount = result.attempts.length
-          setTimeout(() => showSuccess({ title: 'Mot trouve !', copy: `${result.answer || 'Reponse trouvee'} - ${attemptCount} essais - +5 points`, action: () => go('ranking'), actionLabel: 'Voir le classement' }), 450)
+          const awardedPoints = result.attempts.find((attempt) => attempt.isCorrect)?.points || 5
+          setTimeout(() => showSuccess({ title: 'Mot trouve !', copy: `${result.answer || 'Reponse trouvee'} - ${attemptCount} essais - +${awardedPoints} points`, action: () => go('ranking'), actionLabel: 'Voir le classement' }), 450)
         }
         return
       }

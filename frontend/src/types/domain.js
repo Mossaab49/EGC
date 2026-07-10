@@ -68,6 +68,7 @@
  * @property {string=} answer
  * @property {WordleLetterStatus[]} statuses
  * @property {boolean} isCorrect
+ * @property {number=} points
  */
 
 /**
