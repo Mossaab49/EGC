@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { MemberStatus, User, UserRole } from '@prisma/client'
 import * as bcrypt from 'bcrypt'
+import { randomBytes } from 'crypto'
 import { PrismaService } from '../../database/prisma.service'
 import { CreateUserDto } from './dto/create-user.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
@@ -19,8 +20,11 @@ export type UserResponse = {
   mustChangePassword: boolean
 }
 
+export type UserCreationResponse = UserResponse & {
+  temporaryPassword?: string
+}
+
 const PASSWORD_HASH_ROUNDS = 10
-const DEFAULT_TEMPORARY_PASSWORD = 'EgcTemp12345'
 
 @Injectable()
 export class UsersService {
@@ -42,14 +46,16 @@ export class UsersService {
     return user ? this.toUserResponse(user) : null
   }
 
-  async create(dto: CreateUserDto): Promise<UserResponse> {
+  async create(dto: CreateUserDto): Promise<UserCreationResponse> {
     const email = dto.email.toLowerCase()
     const existingUser = await this.prisma.user.findUnique({ where: { email } })
     if (existingUser) {
       throw new ConflictException('Un membre existe deja avec cette adresse e-mail.')
     }
 
-    const passwordHash = await bcrypt.hash(dto.password ?? DEFAULT_TEMPORARY_PASSWORD, PASSWORD_HASH_ROUNDS)
+    const generatedTemporaryPassword = dto.password ? undefined : this.generateTemporaryPassword()
+    const password = dto.password ?? generatedTemporaryPassword ?? this.generateTemporaryPassword()
+    const passwordHash = await bcrypt.hash(password, PASSWORD_HASH_ROUNDS)
     const user = await this.prisma.user.create({
       data: {
         name: dto.name,
@@ -61,7 +67,10 @@ export class UsersService {
       },
     })
 
-    return this.toUserResponse(user)
+    return {
+      ...this.toUserResponse(user),
+      ...(generatedTemporaryPassword ? { temporaryPassword: generatedTemporaryPassword } : {}),
+    }
   }
 
   async update(id: string, dto: UpdateUserDto): Promise<UserResponse> {
@@ -147,6 +156,10 @@ export class UsersService {
 
   private toDbStatus(status: UiMemberStatus): MemberStatus {
     return status === 'Actif' ? MemberStatus.ACTIVE : MemberStatus.INVITED
+  }
+
+  private generateTemporaryPassword(): string {
+    return randomBytes(9).toString('base64url')
   }
 
   private isUniqueConstraintError(error: unknown): boolean {

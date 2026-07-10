@@ -71,11 +71,10 @@ export function Admin() {
     const name = String(data.get('name') || '').trim()
     const email = String(data.get('email') || '').trim()
     if (!name || !email) return
-    const temporaryPassword = 'EgcTemp12345'
-    await createMember({ name, email: email.toLowerCase(), role: 'Membre', points: 0, status: 'Invite', password: temporaryPassword })
+    const createdMember = await createMember({ name, email: email.toLowerCase(), role: 'Membre', points: 0, status: 'Invite' })
     event.currentTarget.reset()
     setNewMemberOpen(false)
-    toast({ title: 'Membre cree', copy: `Mot de passe temporaire de ${name}: ${temporaryPassword}` })
+    toast({ title: 'Membre cree', copy: `Mot de passe temporaire de ${name}: ${createdMember.temporaryPassword || 'genere par le backend'}` })
   }
   const addWordToBank = async () => {
     const word = wordInput.trim().toUpperCase()

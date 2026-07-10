@@ -21,6 +21,7 @@
  * @property {number} points
  * @property {MemberStatus} status
  * @property {string=} password
+ * @property {string=} temporaryPassword
  * @property {string=} passwordUpdatedAt
  * @property {boolean=} mustChangePassword
  */

@@ -6,7 +6,7 @@ import { RolesGuard } from '../auth/guards/roles.guard'
 import { CreateUserDto } from './dto/create-user.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
-import { UserResponse, UsersService } from './users.service'
+import { UserCreationResponse, UserResponse, UsersService } from './users.service'
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -20,7 +20,7 @@ export class UsersController {
   }
 
   @Post()
-  create(@Body() dto: CreateUserDto): Promise<UserResponse> {
+  create(@Body() dto: CreateUserDto): Promise<UserCreationResponse> {
     return this.usersService.create(dto)
   }
 

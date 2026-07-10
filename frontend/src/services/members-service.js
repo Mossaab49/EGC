@@ -1,8 +1,6 @@
 import { apiRequest } from './api-client.js'
 import { successResponse } from './service-response.js'
 
-const DEFAULT_TEMPORARY_PASSWORD = 'EgcTemp12345'
-
 /** @type {import('../types/domain.js').Member[]} */
 let membersCache = []
 
@@ -26,7 +24,7 @@ function findCachedMember(email) {
  * @returns {Partial<import('../types/domain.js').Member>}
  */
 function toUserPatch(patch) {
-  const { password, passwordUpdatedAt, mustChangePassword, id, ...userPatch } = patch
+  const { password, temporaryPassword, passwordUpdatedAt, mustChangePassword, id, ...userPatch } = patch
   return userPatch
 }
 
@@ -53,18 +51,21 @@ export async function getMembers(token = null) {
 export async function createMember(member, token = null) {
   if (!token) throw new Error('Session admin expiree. Reconnecte-toi.')
 
+  const body = {
+    name: member.name,
+    email: member.email,
+    role: member.role,
+  }
+  if (member.password) body.password = member.password
+
   const createdMember = await apiRequest('/users', {
     method: 'POST',
     token,
-    body: {
-      name: member.name,
-      email: member.email,
-      role: member.role,
-      password: member.password || DEFAULT_TEMPORARY_PASSWORD,
-    },
+    body,
   })
 
-  membersCache = [...membersCache, cloneMember(createdMember)]
+  const { temporaryPassword, ...createdMemberWithoutTemporaryPassword } = createdMember
+  membersCache = [...membersCache, cloneMember(createdMemberWithoutTemporaryPassword)]
   return successResponse(cloneMember(createdMember))
 }
 
