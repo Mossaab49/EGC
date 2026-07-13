@@ -4,7 +4,7 @@
  * @typedef {'A venir' | 'Passe' | 'Brouillon'} EventStatus
  * @typedef {'Actif' | 'Brouillon' | 'Termine'} TournamentStatus
  * @typedef {'Acceptee' | 'Refusee' | 'En attente'} RequestStatus
- * @typedef {'home' | 'events' | 'activities' | 'account' | 'ranking' | 'admin'} PageId
+ * @typedef {'home' | 'events' | 'activities' | 'account' | 'ranking' | 'admin' | 'login'} PageId
  * @typedef {'overview' | 'members' | 'wordle' | 'events' | 'tournaments' | 'minecraft'} AdminTabId
  * @typedef {'correct' | 'present' | 'absent'} WordleLetterStatus
  * @typedef {'gold' | 'purple' | 'blue' | 'slate'} PlayerTone

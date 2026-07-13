@@ -13,6 +13,8 @@ import { Events } from './features/events/Events.jsx'
 import { Home } from './features/home/Home.jsx'
 import { Ranking } from './features/ranking/Ranking.jsx'
 
+const publicPages = new Set(['home', 'events', 'login'])
+
 export default function App() {
   return (
     <AuthProvider>
@@ -36,6 +38,21 @@ function AppContent() {
    * @param {import('./types/domain.js').PageId} target
    */
   const go = (target) => {
+    if (!user && !publicPages.has(target)) {
+      setPage('login')
+      setNavOpen(false)
+      toast({ title: 'Connexion requise', copy: 'Connecte-toi pour acceder a cette section.' })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
+    if (user && target === 'login') {
+      setPage('account')
+      setNavOpen(false)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
     if (user?.mustChangePassword && target !== 'account') {
       setPage('account')
       setNavOpen(false)
@@ -55,6 +72,13 @@ function AppContent() {
       setNavOpen(false)
     }
   }, [user?.mustChangePassword])
+
+  useEffect(() => {
+    if (!user && !publicPages.has(page)) {
+      setPage('login')
+      setNavOpen(false)
+    }
+  }, [page, user])
 
   /**
    * @param {import('./types/domain.js').EventItem} event
@@ -81,11 +105,11 @@ function AppContent() {
     setPage(profile.mustChangePassword ? 'account' : profile.role === 'Admin' ? 'admin' : 'home')
   }
 
-  const visibleNavItems = user?.role === 'Admin' ? navItems : navItems.filter((item) => item.id !== 'admin')
-
-  if (!user) {
-    return <LoginPage onLoggedIn={handleLoggedIn} />
-  }
+  const visibleNavItems = !user
+    ? navItems.filter((item) => publicPages.has(item.id))
+    : user.role === 'Admin'
+      ? navItems
+      : navItems.filter((item) => item.id !== 'admin')
 
   return (
     <div className="app-shell">
@@ -94,17 +118,20 @@ function AppContent() {
         <button className={`menu-toggle ${navOpen ? 'active' : ''}`} onClick={() => setNavOpen((value) => !value)} aria-expanded={navOpen} aria-controls="site-links"><span />Menu</button>
         <div id="site-links" className={`site-links ${navOpen ? 'is-open' : ''}`}>
           {visibleNavItems.map((item) => <button key={item.id} onClick={() => go(item.id)} className={page === item.id ? 'active' : ''} aria-current={page === item.id ? 'page' : undefined}><span>{item.icon}</span>{item.label}</button>)}
-          <button className="logout-btn menu-logout" onClick={handleLogout}><span>LO</span>Logout</button>
+          {user
+            ? <button className="logout-btn menu-logout" onClick={handleLogout}><span>LO</span>Logout</button>
+            : <button className="logout-btn menu-logout" onClick={() => go('login')}><span>IN</span>Connexion</button>}
         </div>
-        <button className="profile-btn" onClick={() => go('account')}><i>*</i> {user.name}</button>
+        <button className="profile-btn" onClick={() => go(user ? 'account' : 'login')}><i>*</i> {user ? user.name : 'Connexion'}</button>
       </nav>
       <main className="page-swap" key={page}>
         {page === 'home' && <Home go={go} />}
         {page === 'events' && <Events openSignup={openSignup} />}
-        {page === 'activities' && <Activities go={go} showSuccess={setSuccess} />}
-        {page === 'account' && <Account />}
-        {page === 'ranking' && <Ranking go={go} />}
-        {page === 'admin' && <Admin />}
+        {page === 'login' && <LoginPage onLoggedIn={handleLoggedIn} />}
+        {user && page === 'activities' && <Activities go={go} showSuccess={setSuccess} />}
+        {user && page === 'account' && <Account />}
+        {user && page === 'ranking' && <Ranking go={go} />}
+        {user?.role === 'Admin' && page === 'admin' && <Admin />}
       </main>
       <SuccessOverlay success={success} close={() => setSuccess(null)} />
       <Toast toast={toastState} />

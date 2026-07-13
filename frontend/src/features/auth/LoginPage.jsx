@@ -37,7 +37,7 @@ export function LoginPage({ onLoggedIn }) {
   }
 
   return (
-    <main className="login-shell">
+    <section className="login-shell">
       <section className="login-showcase">
         <div className="login-logo-stage"><img src="/assets/logo/cosmoticFull_logo.PNG" alt="EGC" /></div>
         <div>
@@ -55,6 +55,6 @@ export function LoginPage({ onLoggedIn }) {
         {loginError && <p className="login-error">{loginError}</p>}
         <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Connexion...' : 'Se connecter'}</Button>
       </form>
-    </main>
+    </section>
   )
 }
